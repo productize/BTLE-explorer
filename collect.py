@@ -1,45 +1,6 @@
 #!/usr/bin/env python
 
-""" Bluegiga BGAPI/BGLib implementation
-
-Changelog:
-    2013-04-11 - Initial release
-
-============================================
-Bluegiga BGLib Python interface library test scanner app
-2013-04-10 by Jeff Rowberg <jeff@rowberg.net>
-Updates should (hopefully) always be available at https://github.com/jrowberg/bglib
-
-============================================
-BGLib Python interface library code is placed under the MIT license
-Copyright (c) 2013 Jeff Rowberg
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-===============================================
-
-"""
-
-__author__ = "Jeff Rowberg"
-__license__ = "MIT"
-__version__ = "2013-04-11"
-__email__ = "jeff@rowberg.net"
-
+# loosely based on bglib_test_scanner.py released under MIT license by Jeff Rowberg, who also works for BlueGiga
 
 import bglib, serial, time, datetime
 
@@ -51,28 +12,65 @@ def my_timeout(sender, args):
     #ble.check_activity(ser, 1)
     print "BGAPI parser timed out. Make sure the BLE device is in a known/idle state."
 
+GAP_AD_TYPE_FLAGS = 0x01
+GAP_AD_TYPE_LOCALNAME_COMPLETE = 0x09
+GAP_AD_TYPE_TX_POWER = 0x0A
+GAP_AD_TYPE_VENDOR = 0xFF
+
+def parse_product(product_id, data):
+  if product_id == 0:
+    lux = data[0] + 256*data[1]
+    return "lux:%d" % lux
+
+def parse_vendor(data):
+  vendor = data[0] + 256*data[1]
+  if vendor == 0xffff:
+    product_id == data[2]
+    return parse_product(product_id, data[3:])
+  else:
+    return "vendor:%04X" % vendor
+
+def parse_data(data):
+  pos = 0
+  dl = []
+  while pos < len(data):
+    field_len = data[pos]
+    field_type = data[pos+1]
+    field_data = data[pos+2:(pos+2+field_len-1)]
+    if field_type == GAP_AD_TYPE_FLAGS:
+      dl.append("flags:%02X" % field_data[0])
+    elif field_type == GAP_AD_TYPE_LOCALNAME_COMPLETE:
+      dl.append("name:%s" % (''.join(['%c' % b for b in field_data]))
+    elif field_type == GAP_AD_TYPE_TX_POWER:
+      dl.append("tx:%ddB" % (field_data[0]))
+    elif field_type == GAP_AD_VENDOR:
+      dl_append(parse_vendor(field_data))
+    else:
+      dl.append("unknown:%d" % field_type)
+    pos += field_len + 1
+  return ' '.join(dl)
+      
+      
+
 # handler to print scan responses with a timestamp
 def my_ble_evt_gap_scan_response(sender, args):
     print "gap_scan_response",
     t = datetime.datetime.now()
     disp_list = []
     disp_list.append("%ld.%03ld" % (time.mktime(t.timetuple()), t.microsecond/1000))
-    disp_list.append("%d" % args["rssi"])
-    disp_list.append("%d" % args["packet_type"])
-    disp_list.append("%s" % ''.join(['%02X' % b for b in args["sender"][::-1]]))
-    disp_list.append("%d" % args["address_type"])
-    disp_list.append("%d" % args["bond"])
-    disp_list.append("%s" % ''.join(['%02X' % b for b in args["data"]]))
+    disp_list.append("rssi: %d" % args["rssi"])
+    disp_list.append("type: %d" % args["packet_type"])
+    disp_list.append("from: %s" % ''.join(['%02X' % b for b in args["sender"][::-1]]))
+    disp_list.append("adt: %d" % args["address_type"])
+    disp_list.append("bond: %d" % args["bond"])
+    disp_list.append("data: %s" % parse_data(args['data']))
     print ' '.join(disp_list)
 
 def main():
-    # NOTE: CHANGE THESE TO FIT YOUR TEST SYSTEM
-    port_name = "/dev/ttyUSB0"
     port_name = "/dev/ttyACM3"
     baud_rate = 115200
     packet_mode = False
 
-    # create BGLib object
     ble = bglib.BGLib()
     ble.packet_mode = packet_mode
 

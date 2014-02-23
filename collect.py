@@ -28,7 +28,7 @@ def my_ble_evt_gap_scan_response(sender, args):
     disp_list.append("data: %s" % parse_data(args['data']))
     print ' '.join(disp_list)
 
-def main():
+def run():
     port_name = "/dev/ttyACM3"
     baud_rate = 115200
     packet_mode = False
@@ -75,7 +75,4 @@ def main():
         time.sleep(0.01)
 
 if __name__ == '__main__':
-  if len(sys.argv) == 1:
-    sys.exit(gui.main())
-  else:
-    main()
+  run()

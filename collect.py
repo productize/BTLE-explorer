@@ -2,6 +2,8 @@
 
 # loosely based on bglib_test_scanner.py released under MIT license by Jeff Rowberg, who also works for BlueGiga
 
+# (c) 2014 Joost Yervante Damad <joost@productize.be>
+
 import sys, serial, time, datetime
 import bglib
 from productize import parse_data

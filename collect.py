@@ -81,7 +81,7 @@ def print_scan_response(args):
   disp_list.append("from: %s" % ''.join(['%02X' % b for b in args["sender"][::-1]]))
   disp_list.append("adt: %d" % args["address_type"])
   disp_list.append("bond: %d" % args["bond"])
-  disp_list.append("data: %s" % parse_data(args['data']))
+  disp_list.append("name: %s data: %s" % parse_data(args['data']))
   print ' '.join(disp_list)
 
 def run():

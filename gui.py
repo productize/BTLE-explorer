@@ -7,15 +7,7 @@ import sys, time
 from PySide import QtGui, QtCore
 from PySide.QtCore import Qt
 
-class CollectThread(QtCore.QThread):
-  def __init__(self, parent = None):
-    super(CollectThread, self).__init__(parent)
-
-  def run(self):
-    while True:
-      print "cucu"
-      time.sleep(10)
-
+from collect import CollectThread
 
 class MainWin(QtGui.QMainWindow):
 
@@ -71,8 +63,12 @@ class MainWin(QtGui.QMainWindow):
     print "tab changed", i
 
   def run_collection(self):
-    self.collect_thread = CollectThread()
+    self.collect_thread = CollectThread("/dev/ttyACM0", 115200)
+    self.collect_thread.scan_response.connect(self.scan_response)
     self.collect_thread.start()
+
+  def scan_response(self, data):
+    print data
 
 def main():
   QtCore.QCoreApplication.setOrganizationName("productize")

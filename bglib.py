@@ -775,6 +775,7 @@ class BGLib(object):
                         self.ble_rsp_attributes_user_write_response({  })
                 elif packet_class == 3:
                     if packet_command == 0: # ble_rsp_connection_disconnect
+                        #print ''.join(["%02X" % ord(x) for x in self.bgapi_rx_payload])
                         connection, result = struct.unpack('<BH', self.bgapi_rx_payload[:3])
                         self.ble_rsp_connection_disconnect({ 'connection': connection, 'result': result })
                     elif packet_command == 1: # ble_rsp_connection_get_rssi

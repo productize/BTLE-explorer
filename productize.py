@@ -16,7 +16,6 @@ def parse_vendor(data):
   vendor = data[0] + 256*data[1]
   if vendor == 0xffff:
     product_id = data[2] + 256*data[3]
-    print "product_id", product_id
     return parse_product(product_id, data[4:])
   else:
     return "vendor:%04X" % vendor

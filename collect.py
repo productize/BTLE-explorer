@@ -66,21 +66,20 @@ class CollectThread(QtCore.QThread):
 
   def handle_scan_response(self, sender, args):
     self.scan_response.emit(args)
-    return
-    print "gap_scan_response",
-    t = datetime.datetime.now()
-    disp_list = []
-    disp_list.append("%ld.%03ld" % (time.mktime(t.timetuple()), t.microsecond/1000))
-    disp_list.append("rssi: %d" % args["rssi"])
-    disp_list.append("type: %d" % args["packet_type"])
-    disp_list.append("from: %s" % ''.join(['%02X' % b for b in args["sender"][::-1]]))
-    disp_list.append("adt: %d" % args["address_type"])
-    disp_list.append("bond: %d" % args["bond"])
-    disp_list.append("data: %s" % parse_data(args['data']))
-    print ' '.join(disp_list)
 
+ 
 def print_scan_response(args):
-  print args
+  print "gap_scan_response",
+  t = datetime.datetime.now()
+  disp_list = []
+  disp_list.append("%ld.%03ld" % (time.mktime(t.timetuple()), t.microsecond/1000))
+  disp_list.append("rssi: %d" % args["rssi"])
+  disp_list.append("type: %d" % args["packet_type"])
+  disp_list.append("from: %s" % ''.join(['%02X' % b for b in args["sender"][::-1]]))
+  disp_list.append("adt: %d" % args["address_type"])
+  disp_list.append("bond: %d" % args["bond"])
+  disp_list.append("data: %s" % parse_data(args['data']))
+  print ' '.join(disp_list)
 
 def run():
   import signal

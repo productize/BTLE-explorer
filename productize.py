@@ -23,6 +23,7 @@ def parse_vendor(data):
 def parse_data(data):
   pos = 0
   dl = []
+  name = ''
   while pos < len(data):
     field_len = data[pos]
     field_type = data[pos+1]
@@ -30,7 +31,8 @@ def parse_data(data):
     if field_type == GAP_AD_TYPE_FLAGS:
       dl.append("flags:%02X" % field_data[0])
     elif field_type == GAP_AD_TYPE_LOCALNAME_COMPLETE:
-      dl.append("name:%s" % (''.join(['%c' % b for b in field_data])))
+      name = ''.join(['%c' % b for b in field_data])
+      # dl.append("name:%s" % name)
     elif field_type == GAP_AD_TYPE_TX_POWER:
       dl.append("tx:%ddB" % (field_data[0]))
     elif field_type == GAP_AD_TYPE_VENDOR:
@@ -38,4 +40,4 @@ def parse_data(data):
     else:
       dl.append("unknown:%d" % field_type)
     pos += field_len + 1
-  return ' '.join(dl)
+  return (name, ' '.join(dl))

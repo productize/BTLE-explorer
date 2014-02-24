@@ -70,15 +70,18 @@ class MainWin(QtGui.QMainWindow):
     self.collect_thread.start()
 
   def scan_response(self, args):
-    t = datetime.datetime.now()
-    t_field = "%ld.%03ld" %  (time.mktime(t.timetuple()), t.microsecond/1000)
+    t_field = time.strftime("%H:%M:%S %d/%m/%Y", time.localtime())
     t_field = QtGui.QStandardItem(t_field)
     f_field = ''.join(['%02X' % b for b in args["sender"][::-1]])
     f_field = QtGui.QStandardItem(f_field)
-    d_field = parse_data(args['data'])
+    (n_field, d_field) = parse_data(args['data'])
     d_field = QtGui.QStandardItem(d_field)
-    n_field = QtGui.QStandardItem('')
+    n_field = QtGui.QStandardItem(n_field)
     self.collect_model.insertRow(0, [t_field, f_field, n_field, d_field])
+    self.collect_view.resizeColumnToContents(0)
+    self.collect_view.resizeColumnToContents(1)
+    self.collect_view.resizeColumnToContents(2)
+    self.collect_view.resizeColumnToContents(3)
     print args
 
 def main():

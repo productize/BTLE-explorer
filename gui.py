@@ -2,12 +2,13 @@
 #
 # (c) 2014 Joost Yervante Damad <joost@productize.be>
 
-import sys, time
+import sys, time, datetime
 
 from PySide import QtGui, QtCore
 from PySide.QtCore import Qt
 
 from collect import CollectThread
+from productize import parse_data
 
 class MainWin(QtGui.QMainWindow):
 
@@ -42,12 +43,13 @@ class MainWin(QtGui.QMainWindow):
   def about(self):
     a = """
 <p align="center"><b>BTLE tool</b></p>
-<p align="center">(c) 2014 Joost Yervante Damad &lt;joost@productize.be&gt;</p>
+<p align="center">(c) 2014 <i>productize</i> &lt;joost@productize.be&gt;</p>
 """
     QtGui.QMessageBox.about(self, "about BTLE tool", a)
 
   def close(self):
-    # TODO stop threads
+    self.collect_thread.stop()
+    time.sleep(0.1)
     QtGui.qApp.quit()
 
   def make_collect_widget(self):
@@ -67,8 +69,17 @@ class MainWin(QtGui.QMainWindow):
     self.collect_thread.scan_response.connect(self.scan_response)
     self.collect_thread.start()
 
-  def scan_response(self, data):
-    print data
+  def scan_response(self, args):
+    t = datetime.datetime.now()
+    t_field = "%ld.%03ld" %  (time.mktime(t.timetuple()), t.microsecond/1000)
+    t_field = QtGui.QStandardItem(t_field)
+    f_field = ''.join(['%02X' % b for b in args["sender"][::-1]])
+    f_field = QtGui.QStandardItem(f_field)
+    d_field = parse_data(args['data'])
+    d_field = QtGui.QStandardItem(d_field)
+    n_field = QtGui.QStandardItem('')
+    self.collect_model.insertRow(0, [t_field, f_field, n_field, d_field])
+    print args
 
 def main():
   QtCore.QCoreApplication.setOrganizationName("productize")

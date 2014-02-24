@@ -19,7 +19,7 @@ class CollectThread(QtCore.QThread):
 
   def __init__(self, port, baud_rate, packet_mode = False, parent = None):
     super(CollectThread, self).__init__(parent)
-    self.stop = False
+    self._stop = False
     self.port = port
     self.baud_rate = baud_rate
     self.packet_mode = packet_mode
@@ -52,9 +52,12 @@ class CollectThread(QtCore.QThread):
     ble.check_activity(ser, 1)
 
   def run(self):
-    while not self.stop:
+    while not self._stop:
       self.ble.check_activity(self.ser)
       time.sleep(0.01)
+
+  def stop(self):
+    self._stop = True
 
   def timeout(self, sender, args):
     # might want to try the following lines to reset, though it probably

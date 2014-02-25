@@ -75,42 +75,56 @@ class MainWin(QtGui.QMainWindow):
     self.collect_view.setSelectionModel(self.selection_model)
     self.selection_model.currentRowChanged.connect(self.row_changed)
     self.selected_device = None
-
     return self.collect_view
 
+  def make_device_widget(self, handle, mac):
+     return QtGui.QLabel("%d %s" % (handle, mac))
+
   def tab_changed(self, i):
-    print "tab changed", i
+    pass
 
   def row_changed(self, current, previous):
     self.selected_device = self.collect_model.item(current.row(), 1).data(Qt.DisplayRole)
+    self.selected_device_raw = self.collect_model.item(current.row(), 1).data()
 
   def run_collection(self):
     self.collect_thread = CollectThread(self.ble)
     self.ble.scan_response.connect(self.scan_response)
+    self.ble.connection_status.connect(self.connection_status)
     self.collect_thread.start()
 
   def scan_response(self, args):
     s = QtGui.QStandardItem
     time_ = time.strftime("%H:%M:%S %d/%m/%Y", time.localtime())
     ftime = s(time_)
-    sender = ''.join(['%02X' % b for b in args["sender"][::-1]])
+    sender = ':'.join(['%02X' % b for b in args["sender"][::-1]])
     name, data = parse_data(args['data'])
     ident = "%s_%s_%s" % (sender, name, data)
     ftime.setData(ident)
-    # TODO: only keep latest x? from one mac
-    # or possibly just replace identical doubles
-    self.collect_model.insertRow(0, [ftime, s(sender), s(name), s(data)])
-    self.collect_view.resizeColumnToContents(0)
-    self.collect_view.resizeColumnToContents(1)
-    self.collect_view.resizeColumnToContents(2)
-    self.collect_view.resizeColumnToContents(3)
-    for x in range(1, self.collect_model.rowCount()):
+    fsender = s(sender)
+    fsender.setData(args["sender"])
+    replaced = False
+    for x in range(0, self.collect_model.rowCount()):
       if self.collect_model.item(x, 0).data() == ident:
-        self.collect_model.takeRow(x)
+        self.collect_model.item(x, 0).setData(time_, Qt.DisplayRole)
+        replaced = True
         break # only one identical to remove normally
+    if not replaced:
+      self.collect_model.insertRow(0, [ftime, fsender, s(name), s(data)])
+      self.collect_view.resizeColumnToContents(0)
+      self.collect_view.resizeColumnToContents(1)
+      self.collect_view.resizeColumnToContents(2)
+      self.collect_view.resizeColumnToContents(3)
+
+  def connection_status(self, handle, mac, status):
+    print "connection_status called", status
+    if status == BLE.CONNECTED:
+      self.qtab.setCurrentIndex(self.qtab.addTab(self.make_device_widget(handle, mac), mac))
+      self.ble.primary_service_discovery(handle)
 
   def connect(self):
-    print self.selected_device
+    if not self.selected_device is None:
+      self.ble.connect_direct(self.selected_device_raw)
 
 def main():
   QtCore.QCoreApplication.setOrganizationName("productize")

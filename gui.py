@@ -17,6 +17,8 @@ class MainWin(QtGui.QMainWindow):
     menuBar = self.menuBar()
     fileMenu = menuBar.addMenu('&File')
     self.add_action(fileMenu, '&Quit', self.close, 'Ctrl+Q')
+    deviceMenu = menuBar.addMenu('&Device')
+    self.add_action(deviceMenu, '&Connect', self.connect)
     helpMenu = menuBar.addMenu('&Help')
     self.add_action(helpMenu, '&About', self.about)
     self.qtab = QtGui.QTabWidget()
@@ -54,15 +56,31 @@ class MainWin(QtGui.QMainWindow):
 
   def make_collect_widget(self):
     self.collect_view = QtGui.QTreeView()
+    self.collect_view.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+    self.collect_view.setRootIsDecorated(False)
+    def _add(text, slot = None):
+      action = QtGui.QAction(text, self)
+      self.collect_view.addAction(action)
+      if slot != None: action.triggered.connect(slot)
+      else: action.setDisabled(True)
+    _add('&Connect', self.connect)
     self.collect_model = QtGui.QStandardItemModel()
     self.collect_model.setColumnCount(4)
     self.collect_model.setHorizontalHeaderLabels(['time','from', 'name', 'data'])
     self.collect_model_root = self.collect_model.invisibleRootItem()
     self.collect_view.setModel(self.collect_model)
+    self.selection_model = QtGui.QItemSelectionModel(self.collect_model, self.collect_view)
+    self.collect_view.setSelectionModel(self.selection_model)
+    self.selection_model.currentRowChanged.connect(self.row_changed)
+    self.selected_device = None
+
     return self.collect_view
 
   def tab_changed(self, i):
     print "tab changed", i
+
+  def row_changed(self, current, previous):
+    self.selected_device = self.collect_model.item(current.row(), 1).data(Qt.DisplayRole)
 
   def run_collection(self):
     self.collect_thread = CollectThread("/dev/ttyACM0", 115200)
@@ -89,6 +107,8 @@ class MainWin(QtGui.QMainWindow):
         self.collect_model.takeRow(x)
         break # only one identical to remove normally
 
+  def connect(self):
+    print self.selected_device
 
 def main():
   QtCore.QCoreApplication.setOrganizationName("productize")

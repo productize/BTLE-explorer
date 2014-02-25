@@ -4,85 +4,29 @@
 
 # (c) 2014 Joost Yervante Damad <joost@productize.be>
 
-import sys, serial, time, datetime
+import sys, time, datetime
 
 from PySide import QtGui, QtCore
 from PySide.QtCore import Qt
 
-import bglib
 from productize import parse_data
+from ble import BLE
 
 class CollectThread(QtCore.QThread):
 
-  scan_response = QtCore.Signal(dict)
-  timeout = QtCore.Signal()
-
-  def __init__(self, port, baud_rate, packet_mode = False, parent = None):
+  def __init__(self, ble, parent=None):
     super(CollectThread, self).__init__(parent)
     self._stop = False
-    self.port = port
-    self.baud_rate = baud_rate
-    self.packet_mode = packet_mode
-    self.setup_ble()
-
-  def setup_ble(self):
-    self.led = False
-    ble = bglib.BGLib()
     self.ble = ble
-    ble.packet_mode = self.packet_mode
-    ble.on_timeout += self.timeout
-    ble.ble_evt_gap_scan_response += self.handle_scan_response
-    ser = serial.Serial(port=self.port, baudrate=self.baud_rate, timeout=1)
-    ser.flushInput()
-    ser.flushOutput()
-    self.ser = ser
-    # disconnect if we are connected already
-    ble.send_command(ser, ble.ble_cmd_connection_disconnect(0))
-    ble.check_activity(ser, 1)
-    # stop advertising if we are advertising already
-    ble.send_command(ser, ble.ble_cmd_gap_set_mode(0, 0))
-    ble.check_activity(ser, 1)
-    # stop scanning if we are scanning already
-    ble.send_command(ser, ble.ble_cmd_gap_end_procedure())
-    ble.check_activity(ser, 1)
-    # set scan parameters
-    ble.send_command(ser, ble.ble_cmd_gap_set_scan_parameters(0xC8, 0xC8, 1))
-    ble.check_activity(ser, 1)
-    # start scanning now
-    ble.send_command(ser, ble.ble_cmd_gap_discover(1))
-    ble.check_activity(ser, 1)
-    # IO port stuff for LED; doesn't work currently
-    ble.ble_cmd_hardware_io_port_config_direction(0, 1)
-    ble.ble_cmd_hardware_io_port_config_function(0, 0)
-    ble.ble_cmd_hardware_io_port_write(0, 1, 0)
-
 
   def run(self):
     while not self._stop:
-      self.ble.check_activity(self.ser)
+      self.ble.check_activity()
       time.sleep(0.01)
 
   def stop(self):
     self._stop = True
 
-  def timeout(self, sender, args):
-    # might want to try the following lines to reset, though it probably
-    # wouldn't work at this point if it's already timed out:
-    #ble.send_command(ser, ble.ble_cmd_system_reset(0))
-    #ble.check_activity(ser, 1)
-    print "BGAPI parser timed out. Make sure the BLE device is in a known/idle state."
-    self.timeout.emit()
-
-  def handle_scan_response(self, sender, args):
-    if self.led == False:
-      self.ble.ble_cmd_hardware_io_port_write(0, 1, 1)
-      self.led = True
-    else:
-      self.ble.ble_cmd_hardware_io_port_write(0, 1, 0)
-      self.led = False
-    self.scan_response.emit(args)
-
- 
 def print_scan_response(args):
   print "gap_scan_response",
   t = datetime.datetime.now()
@@ -108,10 +52,10 @@ def run():
 
   port_name = "/dev/ttyACM0"
   baud_rate = 115200
-  packet_mode = False
 
-  ct = CollectThread(port_name, baud_rate, packet_mode)
-  ct.scan_response.connect(print_scan_response)
+  ble = BLE(port_name, baud_rate)
+  ct = CollectThread(ble)
+  ble.scan_response.connect(print_scan_response)
   ct.start()
   return app.exec_()
 

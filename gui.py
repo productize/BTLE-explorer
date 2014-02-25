@@ -9,6 +9,7 @@ from PySide.QtCore import Qt
 
 from collect import CollectThread
 from productize import parse_data
+from ble import BLE
 
 class MainWin(QtGui.QMainWindow):
 
@@ -26,6 +27,7 @@ class MainWin(QtGui.QMainWindow):
     self.setCentralWidget(self.qtab)
     self.qtab.currentChanged.connect(self.tab_changed)
     self.qtab.setCurrentIndex(0)
+    self.ble = BLE("/dev/ttyACM0", 115200)
     self.run_collection()
 
   def add_action(self, menu, text, slot, shortcut=None, checkable=False, checked=False):
@@ -83,8 +85,8 @@ class MainWin(QtGui.QMainWindow):
     self.selected_device = self.collect_model.item(current.row(), 1).data(Qt.DisplayRole)
 
   def run_collection(self):
-    self.collect_thread = CollectThread("/dev/ttyACM0", 115200)
-    self.collect_thread.scan_response.connect(self.scan_response)
+    self.collect_thread = CollectThread(self.ble)
+    self.ble.scan_response.connect(self.scan_response)
     self.collect_thread.start()
 
   def scan_response(self, args):

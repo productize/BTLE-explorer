@@ -70,19 +70,25 @@ class MainWin(QtGui.QMainWindow):
     self.collect_thread.start()
 
   def scan_response(self, args):
-    t_field = time.strftime("%H:%M:%S %d/%m/%Y", time.localtime())
-    t_field = QtGui.QStandardItem(t_field)
-    f_field = ''.join(['%02X' % b for b in args["sender"][::-1]])
-    f_field = QtGui.QStandardItem(f_field)
-    (n_field, d_field) = parse_data(args['data'])
-    d_field = QtGui.QStandardItem(d_field)
-    n_field = QtGui.QStandardItem(n_field)
-    self.collect_model.insertRow(0, [t_field, f_field, n_field, d_field])
+    s = QtGui.QStandardItem
+    time_ = time.strftime("%H:%M:%S %d/%m/%Y", time.localtime())
+    ftime = s(time_)
+    sender = ''.join(['%02X' % b for b in args["sender"][::-1]])
+    name, data = parse_data(args['data'])
+    ident = "%s_%s_%s" % (sender, name, data)
+    ftime.setData(ident)
+    # TODO: only keep latest x? from one mac
+    # or possibly just replace identical doubles
+    self.collect_model.insertRow(0, [ftime, s(sender), s(name), s(data)])
     self.collect_view.resizeColumnToContents(0)
     self.collect_view.resizeColumnToContents(1)
     self.collect_view.resizeColumnToContents(2)
     self.collect_view.resizeColumnToContents(3)
-    print args
+    for x in range(1, self.collect_model.rowCount()):
+      if self.collect_model.item(x, 0).data() == ident:
+        self.collect_model.takeRow(x)
+        break # only one identical to remove normally
+
 
 def main():
   QtCore.QCoreApplication.setOrganizationName("productize")

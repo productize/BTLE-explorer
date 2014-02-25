@@ -10,22 +10,7 @@ from PySide import QtGui, QtCore
 from PySide.QtCore import Qt
 
 from productize import parse_data
-from ble import BLE
-
-class CollectThread(QtCore.QThread):
-
-  def __init__(self, ble, parent=None):
-    super(CollectThread, self).__init__(parent)
-    self._stop = False
-    self.ble = ble
-
-  def run(self):
-    while not self._stop:
-      self.ble.check_activity()
-      time.sleep(0.01)
-
-  def stop(self):
-    self._stop = True
+from ble import BLE, ActivityThread
 
 def print_scan_response(args):
   print "gap_scan_response",
@@ -54,7 +39,7 @@ def run():
   baud_rate = 115200
 
   ble = BLE(port_name, baud_rate)
-  ct = CollectThread(ble)
+  ct = ActivityThread(ble)
   ble.scan_response.connect(print_scan_response)
   ct.start()
   return app.exec_()

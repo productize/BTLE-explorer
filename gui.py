@@ -7,9 +7,8 @@ import sys, time, datetime
 from PySide import QtGui, QtCore
 from PySide.QtCore import Qt
 
-from collect import CollectThread
 from productize import parse_data
-from ble import BLE
+from ble import BLE, ActivityThread
 
 class MainWin(QtGui.QMainWindow):
 
@@ -52,7 +51,7 @@ class MainWin(QtGui.QMainWindow):
     QtGui.QMessageBox.about(self, "about BTLE tool", a)
 
   def close(self):
-    self.collect_thread.stop()
+    self.activity_thread.stop()
     time.sleep(0.1)
     QtGui.qApp.quit()
 
@@ -88,10 +87,10 @@ class MainWin(QtGui.QMainWindow):
     self.selected_device_raw = self.collect_model.item(current.row(), 1).data()
 
   def run_collection(self):
-    self.collect_thread = CollectThread(self.ble)
+    self.activity_thread = ActivityThread(self.ble)
     self.ble.scan_response.connect(self.scan_response)
     self.ble.connection_status.connect(self.connection_status)
-    self.collect_thread.start()
+    self.activity_thread.start()
 
   def scan_response(self, args):
     s = QtGui.QStandardItem

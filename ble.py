@@ -1,12 +1,29 @@
-import serial
+import serial, time
 
 import bglib
 from PySide import QtCore
+
+class ActivityThread(QtCore.QThread):
+
+  def __init__(self, ble, parent=None):
+    super(ActivityThread, self).__init__(parent)
+    self._stop = False
+    self.ble = ble
+
+  def run(self):
+    while not self._stop:
+      self.ble.check_activity()
+      time.sleep(0.01)
+
+  def stop(self):
+    self._stop = True
+
 
 class BLE(QtCore.QObject):
   scan_response = QtCore.Signal(dict)
   connection_status = QtCore.Signal(int, str, int)
   timeout = QtCore.Signal()
+  service_result = QtCore.Signal(int, list, int, int)
 
   CONNECTED = 0
 
@@ -84,8 +101,10 @@ class BLE(QtCore.QObject):
       self.connection_status.emit(h, f, self.CONNECTED)
 
   def handle_attclient_group_found(self, sender, args):
-    uuid = reversed(args['uuid'])
-    print uuid
+    uuid = ''.join(["%02X" % c for c in reversed(args['uuid'])])
+    print "Found attribute group for service: %s start=%d, end=%d" % (uuid, args['start'], args['end'])
+    handle = args['connection']
+    self.service_result.emit(handle, uuid, args['start'], args['end'])
 
   def check_activity(self):
     return self.ble.check_activity(self.ser)
@@ -94,7 +113,7 @@ class BLE(QtCore.QObject):
     print "connecting to", target
     address = target
     addr_type = 0 # public
-    timeout = 10 # 1 sec
+    timeout = 30 # 3 sec
     slave_latency = 0 # disabled
     conn_interval_min = 100/1.25 # in ms
     conn_interval_max = 1000/1.25 # in ms
@@ -103,5 +122,6 @@ class BLE(QtCore.QObject):
       conn_interval_max, timeout, slave_latency))
 
   def primary_service_discovery(self, handle):
-    self.send_command(self.ble.ble_cmd_attclient_read_by_group_type(handle, 0x0001, 0xFFFF, list(reversed(BLE.uuid_service))))
+    print "service discovery for %d  ..." % handle
+    self.send_command(self.ble.ble_cmd_attclient_read_by_group_type(handle, 0x0001, 0xFFFF, list(reversed(BLE.uuid_primary))))
 

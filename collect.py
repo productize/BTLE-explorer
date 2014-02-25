@@ -26,6 +26,7 @@ class CollectThread(QtCore.QThread):
     self.setup_ble()
 
   def setup_ble(self):
+    self.led = False
     ble = bglib.BGLib()
     self.ble = ble
     ble.packet_mode = self.packet_mode
@@ -50,6 +51,11 @@ class CollectThread(QtCore.QThread):
     # start scanning now
     ble.send_command(ser, ble.ble_cmd_gap_discover(1))
     ble.check_activity(ser, 1)
+    # IO port stuff for LED; doesn't work currently
+    ble.ble_cmd_hardware_io_port_config_direction(0, 1)
+    ble.ble_cmd_hardware_io_port_config_function(0, 0)
+    ble.ble_cmd_hardware_io_port_write(0, 1, 0)
+
 
   def run(self):
     while not self._stop:
@@ -68,6 +74,12 @@ class CollectThread(QtCore.QThread):
     self.timeout.emit()
 
   def handle_scan_response(self, sender, args):
+    if self.led == False:
+      self.ble.ble_cmd_hardware_io_port_write(0, 1, 1)
+      self.led = True
+    else:
+      self.ble.ble_cmd_hardware_io_port_write(0, 1, 0)
+      self.led = False
     self.scan_response.emit(args)
 
  

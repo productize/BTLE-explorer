@@ -21,7 +21,7 @@ class Device:
     self.view.setRootIsDecorated(False)
     self.model = QtGui.QStandardItemModel()
     self.model.setColumnCount(5)
-    self.model.setHorizontalHeaderLabels(['type', 'service/type','name','handle', 'end/value'])
+    self.model.setHorizontalHeaderLabels(['type', 'service/type','name','handle', 'value'])
     self.root = self.model.invisibleRootItem()
     self.view.setModel(self.model)
 
@@ -42,7 +42,7 @@ class Device:
     print uuids
     p = s(self.type)
     p.setData(uuid)
-    self.model.appendRow([p, s(uuids), s(service), s(str(start)), s(str(end))])
+    self.model.appendRow([p, s(uuids), s(service), s("%s-%s" % (start, end)), s('')])
     self.view.resizeColumnToContents(0)
     self.view.resizeColumnToContents(1)
     self.view.resizeColumnToContents(2)
@@ -53,8 +53,10 @@ class Device:
     self.scan_pos = 0
     i = 0
     uuid = self.model.item(i, 0).data()
-    start = int(self.model.item(i, 3).data(Qt.DisplayRole))
-    end = int(self.model.item(i, 4).data(Qt.DisplayRole))
+    range_str = self.model.item(i, 3).data(Qt.DisplayRole)
+    (starts, ends) = range_str.split('-')
+    start = int(starts)
+    end = int(ends)
     print uuid, start, end
     self.ble.find_information(self.handle, start, end)
 
@@ -64,8 +66,10 @@ class Device:
       return False
     i = self.scan_pos
     uuid = self.model.item(i, 0).data()
-    start = int(self.model.item(i, 3).data(Qt.DisplayRole))
-    end = int(self.model.item(i, 4).data(Qt.DisplayRole))
+    range_str = self.model.item(i, 3).data(Qt.DisplayRole)
+    (starts, ends) = range_str.split('-')
+    start = int(starts)
+    end = int(ends)
     print uuid, start, end
     self.ble.find_information(self.handle, start, end)
     return True

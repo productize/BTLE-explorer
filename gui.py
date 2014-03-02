@@ -8,7 +8,8 @@ from PySide import QtGui, QtCore
 from PySide.QtCore import Qt
 
 from productize import parse_data
-from ble import BLE, ActivityThread
+import ble
+from ble import BLE
 
 class MainWin(QtGui.QMainWindow):
 
@@ -26,7 +27,9 @@ class MainWin(QtGui.QMainWindow):
     self.setCentralWidget(self.qtab)
     self.qtab.currentChanged.connect(self.tab_changed)
     self.qtab.setCurrentIndex(0)
-    self.ble = BLE("/dev/ttyACM0", 115200)
+    self.ble = ble.BLE(115200)
+    self.ble.start()
+    self.setWindowTitle("BTLE tool using device "+self.ble.address)
     self.run_collection()
 
   def add_action(self, menu, text, slot, shortcut=None, checkable=False, checked=False):
@@ -65,6 +68,7 @@ class MainWin(QtGui.QMainWindow):
       if slot != None: action.triggered.connect(slot)
       else: action.setDisabled(True)
     _add('&Connect', self.connect)
+    self.collect_view.doubleClicked.connect(self.connect)
     self.collect_model = QtGui.QStandardItemModel()
     self.collect_model.setColumnCount(4)
     self.collect_model.setHorizontalHeaderLabels(['time','from', 'name', 'data'])
@@ -77,7 +81,9 @@ class MainWin(QtGui.QMainWindow):
     return self.collect_view
 
   def make_device_widget(self, handle, mac):
-     return QtGui.QLabel("%d %s" % (handle, mac))
+     w = QtGui.QLabel("%d %s" % (handle, mac))
+     w.mac = mac
+     return w
 
   def tab_changed(self, i):
     pass
@@ -87,13 +93,16 @@ class MainWin(QtGui.QMainWindow):
     self.selected_device_raw = self.collect_model.item(current.row(), 1).data()
 
   def run_collection(self):
-    self.activity_thread = ActivityThread(self.ble)
+    self.activity_thread = ble.ActivityThread(self.ble)
     self.ble.scan_response.connect(self.scan_response)
     self.ble.connection_status.connect(self.connection_status)
     self.activity_thread.start()
 
   def scan_response(self, args):
-    s = QtGui.QStandardItem
+    def s(x):
+      y = QtGui.QStandardItem(x)
+      y.setEditable(False)
+      return y
     time_ = time.strftime("%H:%M:%S %d/%m/%Y", time.localtime())
     ftime = s(time_)
     sender = ':'.join(['%02X' % b for b in args["sender"][::-1]])
@@ -115,15 +124,30 @@ class MainWin(QtGui.QMainWindow):
       self.collect_view.resizeColumnToContents(2)
       self.collect_view.resizeColumnToContents(3)
 
+  def tab_exists(self, mac):
+    found = None
+    for i in range(1,self.qtab.count()):
+      if self.qtab.widget(i).mac == mac:
+         self.qtab.setCurrentIndex(i)
+         found = i
+         break
+    print "found", found
+    return found
+
   def connection_status(self, handle, mac, status):
     print "connection_status called", status
     if status == BLE.CONNECTED:
-      self.qtab.setCurrentIndex(self.qtab.addTab(self.make_device_widget(handle, mac), mac))
+      idx = self.qtab.addTab(self.make_device_widget(handle, mac), mac)
+      self.qtab.setCurrentIndex(idx)
       self.ble.primary_service_discovery(handle)
 
   def connect(self):
-    if not self.selected_device is None:
-      self.ble.connect_direct(self.selected_device_raw)
+    idx = self.tab_exists(self.selected_device)
+    if idx is None:
+      if not self.selected_device is None:
+        self.ble.connect_direct(self.selected_device_raw)
+    else:
+      self.qtab.setCurrentIndex(idx)
 
 def main():
   QtCore.QCoreApplication.setOrganizationName("productize")

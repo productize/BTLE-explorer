@@ -31,15 +31,52 @@ class BLE(QtCore.QObject):
   uuid_secundary = [0x28, 0x01] # 0x2801
   uuid_client_characteristic_configuration = [0x29, 0x02] # 0x2902
 
-  def __init__(self, port, baud_rate, packet_mode = False):
+  def __init__(self, baud_rate, packet_mode = False):
     super(BLE, self).__init__()
     self.led = False
-    self.port = port
+    self.port = None
     self.baud_rate = baud_rate
     self.packet_mode = packet_mode
-    self.ble = bglib.BGLib()
+    self.address = None
+
+  def address_response(self, sender, args):
+    self.address = ':'.join(['%02X' % b for b in args['address'][::-1]])
+    self.auto_detected = True
+
+  def auto_detect_serial(self):
+    import glob
+    glist = glob.glob('/dev/ttyACM*') + glob.glob('/dev/ttyUSB*')
+    self.auto_detected = False
+    for port in glist:
+      print "trying", port
+      ble = None
+      ble = bglib.BGLib()
+      ble.package_mode = self.packet_mode
+      ble.ble_rsp_system_address_get += self.address_response
+      ser = serial.Serial(port, self.baud_rate, timeout=1)
+      ser.flushInput()
+      ser.flushOutput()
+      ble.send_command(ser, ble.ble_cmd_system_address_get())
+      time.sleep(0.1)
+      ble.check_activity(ser, 1)
+      if self.auto_detected:
+        self.port = port
+        self.ser = ser
+        self.ble = ble
+        print "Using serial:", port
+        return
+      else:
+        ser.close()
+    raise Exception("Serial port not found")
+
+  def start(self, port = None):
+    if port is None:
+      self.auto_detect_serial()
+    else:
+      self.ble = bglib.BGLib()
+      self.ble.packet_mode = self.packet_mode
+      self.ble.ble_rsp_system_address_get += self.address_response
     ble = self.ble
-    ble.packet_mode = self.packet_mode
     ble.on_timeout += self.timeout
     ble.ble_evt_gap_scan_response += self.handle_scan_response
     self.ser = serial.Serial(port=self.port, baudrate=self.baud_rate, timeout=1)
@@ -70,7 +107,10 @@ class BLE(QtCore.QObject):
     self.ble.ble_evt_connection_status += self.handle_connection_status
     # handle service info
     self.ble.ble_evt_attclient_group_found += self.handle_attclient_group_found
-
+    # get local address
+    ble.send_command(ser, ble.ble_cmd_system_address_get())
+    ble.check_activity(ser, 1)
+    print "local device:", self.address
 
   def send_command(self, cmd):
     return self.ble.send_command(self.ser, cmd)
@@ -110,7 +150,8 @@ class BLE(QtCore.QObject):
     return self.ble.check_activity(self.ser)
 
   def connect_direct(self, target):
-    print "connecting to", target
+    f = ':'.join(['%02X' % b for b in target[::-1]])
+    print "connecting to", f
     address = target
     addr_type = 0 # public
     timeout = 30 # 3 sec
@@ -124,4 +165,3 @@ class BLE(QtCore.QObject):
   def primary_service_discovery(self, handle):
     print "service discovery for %d  ..." % handle
     self.send_command(self.ble.ble_cmd_attclient_read_by_group_type(handle, 0x0001, 0xFFFF, list(reversed(BLE.uuid_primary))))
-

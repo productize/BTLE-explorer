@@ -11,6 +11,33 @@ from productize import parse_data
 import ble
 from ble import BLE
 
+class Device:
+
+  def __init__(self, handle, mac):
+    self.handle = handle
+    self.mac = mac
+    self.view = QtGui.QTreeView()
+    self.view.setRootIsDecorated(False)
+    self.model = QtGui.QStandardItemModel()
+    self.model.setColumnCount(5)
+    self.model.setHorizontalHeaderLabels(['type', 'service','name','handle-start', 'handle-end'])
+    self.root = self.model.invisibleRootItem()
+    self.view.setModel(self.model)
+
+  def service_result(self, uuid, start, end):
+    def s(x):
+      y = QtGui.QStandardItem(x)
+      y.setEditable(False)
+      return y
+    print uuid
+    self.model.appendRow([s('primary'), s(uuid), s('TODO'), s(str(start)), s(str(end))])
+    self.view.resizeColumnToContents(0)
+    self.view.resizeColumnToContents(1)
+    self.view.resizeColumnToContents(2)
+    self.view.resizeColumnToContents(3)
+    self.view.resizeColumnToContents(4)
+
+
 class MainWin(QtGui.QMainWindow):
 
   def __init__(self):
@@ -30,6 +57,8 @@ class MainWin(QtGui.QMainWindow):
     self.ble = ble.BLE(115200)
     self.ble.start()
     self.setWindowTitle("BTLE tool using device "+self.ble.address)
+    self.handle_to_mac = {}
+    self.handle_to_device = {}
     self.run_collection()
 
   def add_action(self, menu, text, slot, shortcut=None, checkable=False, checked=False):
@@ -81,9 +110,9 @@ class MainWin(QtGui.QMainWindow):
     return self.collect_view
 
   def make_device_widget(self, handle, mac):
-     w = QtGui.QLabel("%d %s" % (handle, mac))
-     w.mac = mac
-     return w
+     device = Device(handle, mac)
+     self.handle_to_device[handle] = device
+     return device.view
 
   def tab_changed(self, i):
     pass
@@ -96,6 +125,7 @@ class MainWin(QtGui.QMainWindow):
     self.activity_thread = ble.ActivityThread(self.ble)
     self.ble.scan_response.connect(self.scan_response)
     self.ble.connection_status.connect(self.connection_status)
+    self.ble.service_result.connect(self.service_result)
     self.activity_thread.start()
 
   def scan_response(self, args):
@@ -138,6 +168,7 @@ class MainWin(QtGui.QMainWindow):
     print "connection_status called", status
     if status == BLE.CONNECTED:
       idx = self.qtab.addTab(self.make_device_widget(handle, mac), mac)
+      self.handle_to_mac[handle] = mac
       self.qtab.setCurrentIndex(idx)
       self.ble.primary_service_discovery(handle)
 
@@ -148,6 +179,10 @@ class MainWin(QtGui.QMainWindow):
         self.ble.connect_direct(self.selected_device_raw)
     else:
       self.qtab.setCurrentIndex(idx)
+
+  def service_result(self, handle, uuid, start, end):
+    device = self.handle_to_device[handle]
+    device.service_result(uuid, start, end)
 
 def main():
   QtCore.QCoreApplication.setOrganizationName("productize")

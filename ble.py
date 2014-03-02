@@ -3,6 +3,44 @@ import serial, time
 import bglib
 from PySide import QtCore
 
+
+
+UUID = dict(
+
+  generic = ([0x18, 0x00], "Generic Access"),
+  generic_attr = ([0x18, 0x01], "Generic Attribute"),
+  immediate_alert = ([0x18, 0x02], "Immediate Alert"),
+  link_loss = ([0x18, 0x03], "Link Loss"),
+  time = ([0x18, 0x05], "Current Time"),
+  glucose = ([0x18, 0x08], "Glucose"),
+  thermo = ([0x18, 0x09], "Health Thermometer"),
+  cycle_pow = ([0x18, 0x0A], "Device Information"),
+  heart_rate = ([0x18, 0x0D], "Heart Rate"),
+  battery = ([0x18, 0x0F], "Battery"),
+  blood = ([0x18, 0x10], "Blood Pressure"),
+  alert = ([0x18, 0x11], "Alert Notification"),
+  human_interface = ([0x18, 0x12], "Human Interface"),
+  cycle_speed = ([0x18, 0x16], "Cycling Speed and Cadence"),
+  cycle_pow = ([0x18, 0x18], "Cycling Power"),
+
+  primary   = ([0x28, 0x00], "Primary"  ),
+  secundary = ([0x28, 0x01], "Secundary"),
+
+  chr_u_dsc = ([0x29, 0x01], "Characteristic User Description"),
+  chr_c_cnf = ([0x29, 0x02], "Client Characteristic Configuration"),
+)
+
+Immediate Alert	org.bluetooth.service.immediate_alert	0x1802	Adopted
+Link Loss	org.bluetooth.service.link_loss	0x1803	Adopted
+Location and Navigation	org.bluetooth.service.location_and_navigation	0x1819	Adopted
+Next DST Change Service	org.bluetooth.service.next_dst_change	0x1807	Adopted
+Phone Alert Status Service	org.bluetooth.service.phone_alert_status	0x180E	Adopted
+Reference Time Update Service	org.bluetooth.service.reference_time_update	0x1806	Adopted
+Running Speed and Cadence	org.bluetooth.service.running_speed_and_cadence	0x1814	Adopted
+Scan Parameters	org.bluetooth.service.scan_parameters	0x1813	Adopted
+Tx Power	org.bluetooth.service.tx_power	0x1804	Adopted
+
+
 class ActivityThread(QtCore.QThread):
 
   def __init__(self, ble, parent=None):
@@ -26,10 +64,6 @@ class BLE(QtCore.QObject):
   service_result = QtCore.Signal(int, list, int, int)
 
   CONNECTED = 0
-
-  uuid_primary = [0x28, 0x00] # 0x2800
-  uuid_secundary = [0x28, 0x01] # 0x2801
-  uuid_client_characteristic_configuration = [0x29, 0x02] # 0x2902
 
   def __init__(self, baud_rate, packet_mode = False):
     super(BLE, self).__init__()
@@ -133,7 +167,7 @@ class BLE(QtCore.QObject):
     self.scan_response.emit(args)
 
   def handle_connection_status(self, sender, args):
-    print sender, args
+    #print sender, args
     if (args['flags'] & 0x05) == 0x05:
       f = ':'.join(['%02X' % b for b in args['address'][::-1]])
       h = args['connection']
@@ -142,7 +176,7 @@ class BLE(QtCore.QObject):
 
   def handle_attclient_group_found(self, sender, args):
     uuid = ''.join(["%02X" % c for c in reversed(args['uuid'])])
-    print "Found attribute group for service: %s start=%d, end=%d" % (uuid, args['start'], args['end'])
+    #print "Found attribute group for service: %s start=%d, end=%d" % (uuid, args['start'], args['end'])
     handle = args['connection']
     self.service_result.emit(handle, uuid, args['start'], args['end'])
 
@@ -163,5 +197,5 @@ class BLE(QtCore.QObject):
       conn_interval_max, timeout, slave_latency))
 
   def primary_service_discovery(self, handle):
-    print "service discovery for %d  ..." % handle
-    self.send_command(self.ble.ble_cmd_attclient_read_by_group_type(handle, 0x0001, 0xFFFF, list(reversed(BLE.uuid_primary))))
+    # print "service discovery for %d  ..." % handle
+    self.send_command(self.ble.ble_cmd_attclient_read_by_group_type(handle, 0x0001, 0xFFFF, list(reversed(UUID['primary'][0]))))

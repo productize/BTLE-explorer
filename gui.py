@@ -21,7 +21,7 @@ class Device:
     self.view.setRootIsDecorated(False)
     self.model = QtGui.QStandardItemModel()
     self.model.setColumnCount(5)
-    self.model.setHorizontalHeaderLabels(['type', 'service/type','name','handle-start', 'handle-end'])
+    self.model.setHorizontalHeaderLabels(['type', 'service/type','name','handle', 'end/value'])
     self.root = self.model.invisibleRootItem()
     self.view.setModel(self.model)
 

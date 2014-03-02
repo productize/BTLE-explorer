@@ -132,6 +132,7 @@ class MainWin(QtGui.QMainWindow):
     self.ble.scan_response.connect(self.scan_response)
     self.ble.connection_status.connect(self.connection_status)
     self.ble.service_result.connect(self.service_result)
+    self.ble.procedure_completed.connect(self.procedure_completed)
     self.activity_thread.start()
 
   def scan_response(self, args):
@@ -189,6 +190,9 @@ class MainWin(QtGui.QMainWindow):
   def service_result(self, handle, uuid, start, end):
     device = self.handle_to_device[handle]
     device.service_result(uuid, start, end)
+
+  def procedure_completed(self, handle):
+    print "procedure completed", handle
 
 def main():
   QtCore.QCoreApplication.setOrganizationName("productize")

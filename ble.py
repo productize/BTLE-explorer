@@ -68,6 +68,7 @@ class BLE(QtCore.QObject):
   connection_status = QtCore.Signal(int, str, int)
   timeout = QtCore.Signal()
   service_result = QtCore.Signal(int, list, int, int)
+  procedure_completed = QtCore.Signal(int)
 
   CONNECTED = 0
 
@@ -151,6 +152,7 @@ class BLE(QtCore.QObject):
     ble.send_command(ser, ble.ble_cmd_system_address_get())
     ble.check_activity(ser, 1)
     print "local device:", self.address
+    self.ble.ble_evt_attclient_procedure_completed += self.handle_attclient_procedure_completed
 
   def send_command(self, cmd):
     return self.ble.send_command(self.ser, cmd)
@@ -183,9 +185,14 @@ class BLE(QtCore.QObject):
   def handle_attclient_group_found(self, sender, args):
     #uuid = ''.join(["%02X" % c for c in reversed(args['uuid'])])
     #print "Found attribute group for service: %s start=%d, end=%d" % (uuid, args['start'], args['end'])
+    print args
     handle = args['connection']
     uuid = args['uuid'][::-1]
     self.service_result.emit(handle, uuid, args['start'], args['end'])
+
+  def handle_attclient_procedure_completed(self, sender, args):
+    handle = args['connection']
+    self.procedure_completed.emit(handle)
 
   def check_activity(self):
     return self.ble.check_activity(self.ser)

@@ -11,35 +11,41 @@ UUID = dict(
   generic_attr = ([0x18, 0x01], "Generic Attribute"),
   immediate_alert = ([0x18, 0x02], "Immediate Alert"),
   link_loss = ([0x18, 0x03], "Link Loss"),
+  tx_power = ([0x18, 0x04], "Tx Power"),
   time = ([0x18, 0x05], "Current Time"),
+  ref_time = ([0x18, 0x06], "Reference Time Update"),
+  next_dst = ([0x18, 0x07], "Next DST Change Service"),
   glucose = ([0x18, 0x08], "Glucose"),
   thermo = ([0x18, 0x09], "Health Thermometer"),
-  cycle_pow = ([0x18, 0x0A], "Device Information"),
+  device_info = ([0x18, 0x0A], "Device Information"),
   heart_rate = ([0x18, 0x0D], "Heart Rate"),
+  phone_alert = ([0x18, 0x0E], "Phone Alert Status"),
   battery = ([0x18, 0x0F], "Battery"),
   blood = ([0x18, 0x10], "Blood Pressure"),
   alert = ([0x18, 0x11], "Alert Notification"),
   human_interface = ([0x18, 0x12], "Human Interface"),
+  scan_para = ([0x18, 0x13], "Scan Parameters"),
+  run_speed = ([0x18, 0x14], "Running Speed and Cadence"),
   cycle_speed = ([0x18, 0x16], "Cycling Speed and Cadence"),
   cycle_pow = ([0x18, 0x18], "Cycling Power"),
+  loc_nav = ([0x18, 0x19], "Location and Navigation"),
 
   primary   = ([0x28, 0x00], "Primary"  ),
   secundary = ([0x28, 0x01], "Secundary"),
 
   chr_u_dsc = ([0x29, 0x01], "Characteristic User Description"),
   chr_c_cnf = ([0x29, 0x02], "Client Characteristic Configuration"),
+
+  ti_st_1 = ([0xF0, 0x00, 0xAA, 0x00, 0x04, 0x51, 0x40, 0x00, 0xB0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], "TI IR Temperature Sensor"),
+  ti_st_2 = ([0xF0, 0x00, 0xAA, 0x10, 0x04, 0x51, 0x40, 0x00, 0xB0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], "TI Accelerometer"),
+  ti_st_3 = ([0xF0, 0x00, 0xAA, 0x20, 0x04, 0x51, 0x40, 0x00, 0xB0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], "TI Humidity Sensor"),
+  ti_st_4 = ([0xF0, 0x00, 0xAA, 0x30, 0x04, 0x51, 0x40, 0x00, 0xB0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], "TI Magnetometer"),
+  ti_st_5 = ([0xF0, 0x00, 0xAA, 0x40, 0x04, 0x51, 0x40, 0x00, 0xB0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], "TI Barometric Pressure"),
+  ti_st_6 = ([0xF0, 0x00, 0xAA, 0x50, 0x04, 0x51, 0x40, 0x00, 0xB0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], "TI Gyroscope"),
+  ti_st_7 = ([0xF0, 0x00, 0xAA, 0x60, 0x04, 0x51, 0x40, 0x00, 0xB0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], "TI Test"),
+
+  push_butt = ([0xFF, 0xE0], "TI Simple Key"),
 )
-
-Immediate Alert	org.bluetooth.service.immediate_alert	0x1802	Adopted
-Link Loss	org.bluetooth.service.link_loss	0x1803	Adopted
-Location and Navigation	org.bluetooth.service.location_and_navigation	0x1819	Adopted
-Next DST Change Service	org.bluetooth.service.next_dst_change	0x1807	Adopted
-Phone Alert Status Service	org.bluetooth.service.phone_alert_status	0x180E	Adopted
-Reference Time Update Service	org.bluetooth.service.reference_time_update	0x1806	Adopted
-Running Speed and Cadence	org.bluetooth.service.running_speed_and_cadence	0x1814	Adopted
-Scan Parameters	org.bluetooth.service.scan_parameters	0x1813	Adopted
-Tx Power	org.bluetooth.service.tx_power	0x1804	Adopted
-
 
 class ActivityThread(QtCore.QThread):
 
@@ -175,9 +181,10 @@ class BLE(QtCore.QObject):
       self.connection_status.emit(h, f, self.CONNECTED)
 
   def handle_attclient_group_found(self, sender, args):
-    uuid = ''.join(["%02X" % c for c in reversed(args['uuid'])])
+    #uuid = ''.join(["%02X" % c for c in reversed(args['uuid'])])
     #print "Found attribute group for service: %s start=%d, end=%d" % (uuid, args['start'], args['end'])
     handle = args['connection']
+    uuid = args['uuid'][::-1]
     self.service_result.emit(handle, uuid, args['start'], args['end'])
 
   def check_activity(self):

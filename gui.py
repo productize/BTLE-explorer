@@ -29,8 +29,14 @@ class Device:
       y = QtGui.QStandardItem(x)
       y.setEditable(False)
       return y
-    print uuid
-    self.model.appendRow([s('primary'), s(uuid), s('TODO'), s(str(start)), s(str(end))])
+    service = ''
+    for (i, n) in ble.UUID.values():
+      if i == uuid:
+        service = n
+        break
+    uuids = ''.join(["%02X" % c for c in uuid])
+    print uuids
+    self.model.appendRow([s('primary'), s(uuids), s(service), s(str(start)), s(str(end))])
     self.view.resizeColumnToContents(0)
     self.view.resizeColumnToContents(1)
     self.view.resizeColumnToContents(2)

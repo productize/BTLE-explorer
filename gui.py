@@ -13,16 +13,20 @@ from ble import BLE
 
 class Device:
 
-  def __init__(self, handle, mac):
+  def __init__(self, ble, handle, mac):
+    self.ble = ble
     self.handle = handle
     self.mac = mac
     self.view = QtGui.QTreeView()
     self.view.setRootIsDecorated(False)
     self.model = QtGui.QStandardItemModel()
     self.model.setColumnCount(5)
-    self.model.setHorizontalHeaderLabels(['type', 'service','name','handle-start', 'handle-end'])
+    self.model.setHorizontalHeaderLabels(['type', 'service/type','name','handle-start', 'handle-end'])
     self.root = self.model.invisibleRootItem()
     self.view.setModel(self.model)
+
+  def primary(self):
+    self.type = 'primary'
 
   def service_result(self, uuid, start, end):
     def s(x):
@@ -36,15 +40,56 @@ class Device:
         break
     uuids = ''.join(["%02X" % c for c in uuid])
     print uuids
-    self.model.appendRow([s('primary'), s(uuids), s(service), s(str(start)), s(str(end))])
+    p = s(self.type)
+    p.setData(uuid)
+    self.model.appendRow([p, s(uuids), s(service), s(str(start)), s(str(end))])
     self.view.resizeColumnToContents(0)
     self.view.resizeColumnToContents(1)
     self.view.resizeColumnToContents(2)
     self.view.resizeColumnToContents(3)
     self.view.resizeColumnToContents(4)
 
+  def scan(self):
+    self.scan_pos = 0
+    i = 0
+    uuid = self.model.item(i, 0).data()
+    start = int(self.model.item(i, 3).data(Qt.DisplayRole))
+    end = int(self.model.item(i, 4).data(Qt.DisplayRole))
+    print uuid, start, end
+    self.ble.find_information(self.handle, start, end)
+
+  def continue_scan(self):
+    self.scan_pos += 1
+    if self.scan_pos == self.model.rowCount():
+      return False
+    i = self.scan_pos
+    uuid = self.model.item(i, 0).data()
+    start = int(self.model.item(i, 3).data(Qt.DisplayRole))
+    end = int(self.model.item(i, 4).data(Qt.DisplayRole))
+    print uuid, start, end
+    self.ble.find_information(self.handle, start, end)
+    return True
+
+  def info_found(self, char, uuid):
+    #print "info_found", char, uuid
+    def s(x):
+      y = QtGui.QStandardItem(x)
+      y.setEditable(False)
+      return y
+    uuids = ''.join(["%02X" % c for c in uuid])
+    name = ''
+    for (i, n) in ble.UUID.values():
+      if i == uuid:
+        name = n
+        break
+    self.model.item(self.scan_pos).appendRow([s("char"), s(uuids), s(name), s(str(char)), s('')])
+    #self.view.expandAll()
 
 class MainWin(QtGui.QMainWindow):
+
+  PROC_IDLE = 0
+  PROC_PRIMARY = 1
+  PROC_ATTR = 2
 
   def __init__(self):
     super(MainWin, self).__init__()
@@ -65,6 +110,7 @@ class MainWin(QtGui.QMainWindow):
     self.setWindowTitle("BTLE tool using device "+self.ble.address)
     self.handle_to_mac = {}
     self.handle_to_device = {}
+    self.running = self.PROC_IDLE
     self.run_collection()
 
   def add_action(self, menu, text, slot, shortcut=None, checkable=False, checked=False):
@@ -116,9 +162,9 @@ class MainWin(QtGui.QMainWindow):
     return self.collect_view
 
   def make_device_widget(self, handle, mac):
-     device = Device(handle, mac)
+     device = Device(self.ble, handle, mac)
      self.handle_to_device[handle] = device
-     return device.view
+     return device
 
   def tab_changed(self, i):
     pass
@@ -133,6 +179,7 @@ class MainWin(QtGui.QMainWindow):
     self.ble.connection_status.connect(self.connection_status)
     self.ble.service_result.connect(self.service_result)
     self.ble.procedure_completed.connect(self.procedure_completed)
+    self.ble.info_found.connect(self.info_found)
     self.activity_thread.start()
 
   def scan_response(self, args):
@@ -174,9 +221,12 @@ class MainWin(QtGui.QMainWindow):
   def connection_status(self, handle, mac, status):
     print "connection_status called", status
     if status == BLE.CONNECTED:
-      idx = self.qtab.addTab(self.make_device_widget(handle, mac), mac)
+      device = self.make_device_widget(handle, mac)
+      idx = self.qtab.addTab(device.view, mac)
       self.handle_to_mac[handle] = mac
       self.qtab.setCurrentIndex(idx)
+      self.running = self.PROC_PRIMARY
+      device.primary()
       self.ble.primary_service_discovery(handle)
 
   def connect(self):
@@ -191,8 +241,20 @@ class MainWin(QtGui.QMainWindow):
     device = self.handle_to_device[handle]
     device.service_result(uuid, start, end)
 
+  def info_found(self, handle, char, uuid):
+    device = self.handle_to_device[handle]
+    device.info_found(char, uuid)
+
   def procedure_completed(self, handle):
-    print "procedure completed", handle
+    print "procedure completed", handle, self.running
+    device = self.handle_to_device[handle]
+    if self.running == self.PROC_PRIMARY:
+      self.running = self.PROC_ATTR
+      device.scan()
+    elif self.running == self.PROC_ATTR:
+      if not device.continue_scan():
+        self.running = self.PROC_IDLE
+
 
 def main():
   QtCore.QCoreApplication.setOrganizationName("productize")

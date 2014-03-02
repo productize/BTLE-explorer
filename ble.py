@@ -32,6 +32,8 @@ UUID = dict(
 
   primary   = ([0x28, 0x00], "Primary"  ),
   secundary = ([0x28, 0x01], "Secundary"),
+  include   = ([0x28, 0x02], "Include"),
+  char      = ([0x28, 0x03], "Characteristic"),
 
   chr_u_dsc = ([0x29, 0x01], "Characteristic User Description"),
   chr_c_cnf = ([0x29, 0x02], "Client Characteristic Configuration"),
@@ -69,6 +71,7 @@ class BLE(QtCore.QObject):
   timeout = QtCore.Signal()
   service_result = QtCore.Signal(int, list, int, int)
   procedure_completed = QtCore.Signal(int)
+  info_found = QtCore.Signal(int, int, list)
 
   CONNECTED = 0
 
@@ -153,6 +156,7 @@ class BLE(QtCore.QObject):
     ble.check_activity(ser, 1)
     print "local device:", self.address
     self.ble.ble_evt_attclient_procedure_completed += self.handle_attclient_procedure_completed
+    self.ble.ble_evt_attclient_find_information_found += self.handle_attclient_information_found
 
   def send_command(self, cmd):
     return self.ble.send_command(self.ser, cmd)
@@ -185,10 +189,16 @@ class BLE(QtCore.QObject):
   def handle_attclient_group_found(self, sender, args):
     #uuid = ''.join(["%02X" % c for c in reversed(args['uuid'])])
     #print "Found attribute group for service: %s start=%d, end=%d" % (uuid, args['start'], args['end'])
-    print args
     handle = args['connection']
     uuid = args['uuid'][::-1]
     self.service_result.emit(handle, uuid, args['start'], args['end'])
+
+  def handle_attclient_information_found(self, sender, args):
+    print args
+    handle = args['connection']
+    char = args['chrhandle']
+    uuid = args['uuid'][::-1]
+    self.info_found.emit(handle, char, uuid)
 
   def handle_attclient_procedure_completed(self, sender, args):
     handle = args['connection']
@@ -213,3 +223,6 @@ class BLE(QtCore.QObject):
   def primary_service_discovery(self, handle):
     # print "service discovery for %d  ..." % handle
     self.send_command(self.ble.ble_cmd_attclient_read_by_group_type(handle, 0x0001, 0xFFFF, list(reversed(UUID['primary'][0]))))
+
+  def find_information(self, handle, start, end):
+    self.send_command(self.ble.ble_cmd_attclient_find_information(handle, start, end))

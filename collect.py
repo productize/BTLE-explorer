@@ -9,10 +9,10 @@ import sys, time, datetime
 from PySide import QtGui, QtCore
 from PySide.QtCore import Qt
 
-from productize import parse_data
+from data import UUID
 from ble import BLE, ActivityThread
 
-def print_scan_response(args):
+def print_scan_response(ble, args):
   print "gap_scan_response",
   t = datetime.datetime.now()
   disp_list = []
@@ -22,7 +22,7 @@ def print_scan_response(args):
   disp_list.append("from: %s" % ''.join(['%02X' % b for b in args["sender"][::-1]]))
   disp_list.append("adt: %d" % args["address_type"])
   disp_list.append("bond: %d" % args["bond"])
-  disp_list.append("name: %s data: %s" % parse_data(args['data']))
+  disp_list.append("name: %s data: %s" % ble.data_to_string(args['data']))
   print ' '.join(disp_list)
 
 def run():
@@ -35,12 +35,11 @@ def run():
 
   signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-  port_name = "/dev/ttyACM0"
   baud_rate = 115200
-
-  ble = BLE(port_name, baud_rate)
+  ble = BLE(baud_rate)
+  ble.start()
   ct = ActivityThread(ble)
-  ble.scan_response.connect(print_scan_response)
+  ble.scan_response.connect(lambda x: print_scan_response(ble, x))
   ct.start()
   return app.exec_()
 

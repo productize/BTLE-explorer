@@ -3,32 +3,14 @@ import serial, time
 import bglib
 from PySide import QtCore
 
-
+# https://www.bluetooth.org/en-us/specification/assigned-numbers/generic-access-profile
+GAP_AD_TYPE_FLAGS = 0x01
+GAP_AD_TYPE_LOCALNAME_COMPLETE = 0x09
+GAP_AD_TYPE_TX_POWER = 0x0A
+GAP_AD_TYPE_SLAVE_CON_INTERVAL_RANGE = 0x12
+GAP_AD_TYPE_VENDOR = 0xFF
 
 UUID = dict(
-
-  generic = ([0x18, 0x00], "Generic Access"),
-  generic_attr = ([0x18, 0x01], "Generic Attribute"),
-  immediate_alert = ([0x18, 0x02], "Immediate Alert"),
-  link_loss = ([0x18, 0x03], "Link Loss"),
-  tx_power = ([0x18, 0x04], "Tx Power"),
-  time = ([0x18, 0x05], "Current Time"),
-  ref_time = ([0x18, 0x06], "Reference Time Update"),
-  next_dst = ([0x18, 0x07], "Next DST Change Service"),
-  glucose = ([0x18, 0x08], "Glucose"),
-  thermo = ([0x18, 0x09], "Health Thermometer"),
-  device_info = ([0x18, 0x0A], "Device Information"),
-  heart_rate = ([0x18, 0x0D], "Heart Rate"),
-  phone_alert = ([0x18, 0x0E], "Phone Alert Status"),
-  battery = ([0x18, 0x0F], "Battery"),
-  blood = ([0x18, 0x10], "Blood Pressure"),
-  alert = ([0x18, 0x11], "Alert Notification"),
-  human_interface = ([0x18, 0x12], "Human Interface"),
-  scan_para = ([0x18, 0x13], "Scan Parameters"),
-  run_speed = ([0x18, 0x14], "Running Speed and Cadence"),
-  cycle_speed = ([0x18, 0x16], "Cycling Speed and Cadence"),
-  cycle_pow = ([0x18, 0x18], "Cycling Power"),
-  loc_nav = ([0x18, 0x19], "Location and Navigation"),
 
   primary   = ([0x28, 0x00], "Primary"  ),
   secundary = ([0x28, 0x01], "Secundary"),
@@ -89,12 +71,14 @@ class BLE(QtCore.QObject):
   CONNECTED = 0
 
   def __init__(self, baud_rate, packet_mode = False):
+    import data
     super(BLE, self).__init__()
     self.led = False
     self.port = None
     self.baud_rate = baud_rate
     self.packet_mode = packet_mode
     self.address = None
+    self.uuid = data.UUID()
 
   def address_response(self, sender, args):
     self.address = ':'.join(['%02X' % b for b in args['address'][::-1]])
@@ -239,3 +223,50 @@ class BLE(QtCore.QObject):
 
   def find_information(self, handle, start, end):
     self.send_command(self.ble.ble_cmd_attclient_find_information(handle, start, end))
+
+  def flags_to_string(self, val):
+    flags = []
+    if val & (2**0) > 0:
+      flags.append('LE_lim')
+    if val & (2**1) > 0:
+      flags.append('LE_gen')
+    if val & (2**2) > 0:
+      flags.append('no_BR/EDR')
+    if val & (2**3) > 0:
+      flags.append('sim1')
+    if val & (2**4) > 0:
+      flags.append('sim2')
+    return '|'.join(flags)
+
+  def data_to_string(self, data):
+    pos = 0
+    dl = []
+    name = ''
+    while pos < len(data):
+      field_len = data[pos]
+      field_type = data[pos+1]
+      field_data = data[pos+2:(pos+2+field_len-1)]
+      if field_type == GAP_AD_TYPE_FLAGS:
+        dl.append("flags:%s" % self.flags_to_string(field_data[0]))
+      elif field_type == GAP_AD_TYPE_LOCALNAME_COMPLETE:
+        name = ''.join(['%c' % b for b in field_data])
+        # dl.append("name:%s" % name)
+      elif field_type == GAP_AD_TYPE_TX_POWER:
+        dl.append("tx:%ddB" % (field_data[0]))
+      elif field_type == GAP_AD_TYPE_SLAVE_CON_INTERVAL_RANGE:
+        x1 = (field_data[0] + 256*field_data[1])*1.25
+        x2 = (field_data[2] + 256*field_data[3])*1.25
+        dl.append('slv_con_int_ran:%d-%dms' % (x1, x2))
+      elif field_type == GAP_AD_TYPE_VENDOR:
+        dl.append(self.uuid.vendor_to_string(field_data))
+      else:
+        dl.append("unknown_field:0x%x" % field_type)
+      pos += field_len + 1
+    return (name, ' '.join(dl))
+
+# https://www.bluetooth.org/en-us/specification/assigned-numbers/generic-access-profile
+GAP_AD_TYPE_FLAGS = 0x01
+GAP_AD_TYPE_LOCALNAME_COMPLETE = 0x09
+GAP_AD_TYPE_TX_POWER = 0x0A
+GAP_AD_TYPE_SLAVE_CON_INTERVAL_RANGE = 0x12
+GAP_AD_TYPE_VENDOR = 0xFF

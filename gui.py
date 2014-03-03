@@ -7,7 +7,6 @@ import sys, time, datetime
 from PySide import QtGui, QtCore
 from PySide.QtCore import Qt
 
-from productize import parse_data
 import ble
 from ble import BLE
 
@@ -194,7 +193,7 @@ class MainWin(QtGui.QMainWindow):
     time_ = time.strftime("%H:%M:%S %d/%m/%Y", time.localtime())
     ftime = s(time_)
     sender = ':'.join(['%02X' % b for b in args["sender"][::-1]])
-    name, data = parse_data(args['data'])
+    name, data = ble.parse_data(args['data'])
     ident = "%s_%s_%s" % (sender, name, data)
     ftime.setData(ident)
     fsender = s(sender)

@@ -18,6 +18,13 @@ class Device:
     self.mac = mac
     self.view = QtGui.QTreeView()
     self.view.setExpandsOnDoubleClick(True)
+    self.view.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+    def _add(text, slot = None):
+      action = QtGui.QAction(text, self.view)
+      self.view.addAction(action)
+      if slot != None: action.triggered.connect(slot)
+      else: action.setDisabled(True)
+    _add('&Read', self.read)
     self.view.setRootIsDecorated(False)
     self.model = QtGui.QStandardItemModel()
     self.model.setColumnCount(5)
@@ -32,6 +39,10 @@ class Device:
 
   def row_changed(self, current, previous):
     self.current = current
+
+  def read(self):
+    parent = self.model.itemFromIndex(self.current.parent())
+    print parent.child(self.current.row(), 3).data(Qt.DisplayRole)
 
   """
   def double_click(self):
@@ -137,7 +148,11 @@ class MainWin(QtGui.QMainWindow):
     self.handle_to_mac = {}
     self.handle_to_device = {}
     self.running = self.PROC_IDLE
+    self.status("Ready.")
     self.run_collection()
+
+  def status(self, msg):
+    self.statusBar().showMessage(msg)
 
   def add_action(self, menu, text, slot, shortcut=None, checkable=False, checked=False):
     action = QtGui.QAction(text, self)
@@ -207,6 +222,7 @@ class MainWin(QtGui.QMainWindow):
     self.ble.procedure_completed.connect(self.procedure_completed)
     self.ble.info_found.connect(self.info_found)
     self.activity_thread.start()
+    self.status("Collecting...")
 
   def scan_response(self, args):
     def s(x):
@@ -253,12 +269,14 @@ class MainWin(QtGui.QMainWindow):
       self.qtab.setCurrentIndex(idx)
       self.running = self.PROC_PRIMARY
       device.primary()
+      self.status("service discovery running")
       self.ble.primary_service_discovery(handle)
 
   def double_click(self):
     idx = self.tab_exists(self.selected_device)
     if idx is None:
       if not self.selected_device is None:
+        self.status("connecting")
         self.ble.connect_direct(self.selected_device_raw)
     else:
       self.qtab.setCurrentIndex(idx)
@@ -279,10 +297,12 @@ class MainWin(QtGui.QMainWindow):
     device = self.handle_to_device[handle]
     if self.running == self.PROC_PRIMARY:
       self.running = self.PROC_ATTR
+      self.status("retrieving attributes")
       device.scan()
     elif self.running == self.PROC_ATTR:
       if not device.continue_scan():
         self.running = self.PROC_IDLE
+        self.status("Idle.")
 
 
 def main():

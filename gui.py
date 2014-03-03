@@ -33,7 +33,7 @@ class Device:
       y.setEditable(False)
       return y
     service = ''
-    for (i, n) in ble.UUID.values():
+    for (i, n) in self.ble.uuid.service.values():
       if i == uuid:
         service = n
         break
@@ -81,7 +81,7 @@ class Device:
       return y
     uuids = ''.join(["%02X" % c for c in uuid])
     name = ''
-    for (i, n) in ble.UUID.values():
+    for (i, n) in self.ble.uuid.attr.values():
       if i == uuid:
         name = n
         break
@@ -193,7 +193,7 @@ class MainWin(QtGui.QMainWindow):
     time_ = time.strftime("%H:%M:%S %d/%m/%Y", time.localtime())
     ftime = s(time_)
     sender = ':'.join(['%02X' % b for b in args["sender"][::-1]])
-    name, data = ble.parse_data(args['data'])
+    name, data = self.ble.data_to_string(args['data'])
     ident = "%s_%s_%s" % (sender, name, data)
     ftime.setData(ident)
     fsender = s(sender)

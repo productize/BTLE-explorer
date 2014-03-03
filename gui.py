@@ -17,12 +17,35 @@ class Device:
     self.handle = handle
     self.mac = mac
     self.view = QtGui.QTreeView()
+    self.view.setExpandsOnDoubleClick(True)
     self.view.setRootIsDecorated(False)
     self.model = QtGui.QStandardItemModel()
     self.model.setColumnCount(5)
     self.model.setHorizontalHeaderLabels(['type', 'service/type','name','handle', 'value'])
     self.root = self.model.invisibleRootItem()
     self.view.setModel(self.model)
+    #self.view.doubleClicked.connect(self.double_click)
+    self.selection_model = QtGui.QItemSelectionModel(self.model, self.view)
+    self.view.setSelectionModel(self.selection_model)
+    self.selection_model.currentRowChanged.connect(self.row_changed)
+    self.current = None
+
+  def row_changed(self, current, previous):
+    self.current = current
+
+  """
+  def double_click(self):
+    if self.current is None: return
+    current = self.current
+    print current, current.parent()
+    while current.parent() != QtCore.QModelIndex():
+      current = current.parent()
+      print current, current.parent()
+    for i in range(self.root.rowCount()):
+      child = self.root.child(i, 0).index()
+      print "child: ", child, current
+      self.view.setExpanded(child, child == current)
+  """
 
   def primary(self):
     self.type = 'primary'
@@ -38,7 +61,7 @@ class Device:
         service = n
         break
     uuids = ''.join(["%02X" % c for c in uuid])
-    print uuids
+    #print uuids
     p = s(self.type)
     p.setData(uuid)
     self.model.appendRow([p, s(uuids), s(service), s("%s-%s" % (start, end)), s('')])
@@ -56,7 +79,7 @@ class Device:
     (starts, ends) = range_str.split('-')
     start = int(starts)
     end = int(ends)
-    print uuid, start, end
+    #print uuid, start, end
     self.ble.find_information(self.handle, start, end)
 
   def continue_scan(self):
@@ -69,7 +92,7 @@ class Device:
     (starts, ends) = range_str.split('-')
     start = int(starts)
     end = int(ends)
-    print uuid, start, end
+    #print uuid, start, end
     self.ble.find_information(self.handle, start, end)
     return True
 
@@ -100,7 +123,7 @@ class MainWin(QtGui.QMainWindow):
     fileMenu = menuBar.addMenu('&File')
     self.add_action(fileMenu, '&Quit', self.close, 'Ctrl+Q')
     deviceMenu = menuBar.addMenu('&Device')
-    self.add_action(deviceMenu, '&Connect', self.connect)
+    self.add_action(deviceMenu, '&Connect', self.double_click)
     helpMenu = menuBar.addMenu('&Help')
     self.add_action(helpMenu, '&About', self.about)
     self.qtab = QtGui.QTabWidget()
@@ -151,8 +174,8 @@ class MainWin(QtGui.QMainWindow):
       self.collect_view.addAction(action)
       if slot != None: action.triggered.connect(slot)
       else: action.setDisabled(True)
-    _add('&Connect', self.connect)
-    self.collect_view.doubleClicked.connect(self.connect)
+    _add('&Connect', self.double_click)
+    self.collect_view.doubleClicked.connect(self.double_click)
     self.collect_model = QtGui.QStandardItemModel()
     self.collect_model.setColumnCount(4)
     self.collect_model.setHorizontalHeaderLabels(['time','from', 'name', 'data'])
@@ -232,7 +255,7 @@ class MainWin(QtGui.QMainWindow):
       device.primary()
       self.ble.primary_service_discovery(handle)
 
-  def connect(self):
+  def double_click(self):
     idx = self.tab_exists(self.selected_device)
     if idx is None:
       if not self.selected_device is None:
@@ -245,8 +268,11 @@ class MainWin(QtGui.QMainWindow):
     device.service_result(uuid, start, end)
 
   def info_found(self, handle, char, uuid):
-    device = self.handle_to_device[handle]
-    device.info_found(char, uuid)
+    try:
+      device = self.handle_to_device[handle]
+      device.info_found(char, uuid)
+    except KeyError:
+      print "ignoring message for unknown handle", handle
 
   def procedure_completed(self, handle):
     print "procedure completed", handle, self.running

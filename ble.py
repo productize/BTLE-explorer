@@ -157,7 +157,7 @@ class BLE(QtCore.QObject):
     self.service_result.emit(handle, uuid, args['start'], args['end'])
 
   def handle_attclient_information_found(self, sender, args):
-    print args
+    #print args
     handle = args['connection']
     char = args['chrhandle']
     uuid = args['uuid'][::-1]

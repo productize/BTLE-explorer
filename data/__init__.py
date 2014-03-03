@@ -1,4 +1,4 @@
-import services, productize
+import services, productize, texas_instruments
 
 class UUID:
 
@@ -6,7 +6,7 @@ class UUID:
     self.service = {}
     self.attr = {}
     self.vendor = []
-    sources = [services, productize]
+    sources = [services, productize, texas_instruments]
     for source in sources:
      self.service.update(source.service)
      self.attr.update(source.attr)

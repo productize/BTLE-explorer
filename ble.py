@@ -238,16 +238,14 @@ class BLE(QtCore.QObject):
   def read_handle(self, handle, chandle):
     self.send_command(self.ble.ble_cmd_attclient_read_by_handle(handle, chandle))
 
+  def read_handles(self, handle, h1, h2):
+    for x in range(h1, h2+1):
+      self.send_command(self.ble.ble_cmd_attclient_read_by_handle(handle, x))
+
   def handle_attclient_attribute_value(self, sender, args):
     chandle = args['atthandle']
     handle = args['connection']
     t = args['type']
     value = args['value']
     self.attr_value.emit(handle, chandle, t, value)
-
-# https://www.bluetooth.org/en-us/specification/assigned-numbers/generic-access-profile
-GAP_AD_TYPE_FLAGS = 0x01
-GAP_AD_TYPE_LOCALNAME_COMPLETE = 0x09
-GAP_AD_TYPE_TX_POWER = 0x0A
-GAP_AD_TYPE_SLAVE_CON_INTERVAL_RANGE = 0x12
-GAP_AD_TYPE_VENDOR = 0xFF
+    self.ble.check_activity(self.ser, 1)

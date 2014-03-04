@@ -25,13 +25,14 @@ class Device:
       if slot != None: action.triggered.connect(slot)
       else: action.setDisabled(True)
     _add('&Read', self.read)
+    _add('&Write', self.write)
     self.view.setRootIsDecorated(False)
     self.model = QtGui.QStandardItemModel()
     self.model.setColumnCount(5)
     self.model.setHorizontalHeaderLabels(['type', 'service/type','name','handle', 'value'])
     self.root = self.model.invisibleRootItem()
     self.view.setModel(self.model)
-    #self.view.doubleClicked.connect(self.double_click)
+    self.view.doubleClicked.connect(self.double_click)
     self.selection_model = QtGui.QItemSelectionModel(self.model, self.view)
     self.view.setSelectionModel(self.selection_model)
     self.selection_model.currentRowChanged.connect(self.row_changed)
@@ -43,26 +44,35 @@ class Device:
     self.current = current
 
   def read(self):
+    return self.read2(False)
+  
+  def double_click(self):
+    return self.read2(True)
+
+  def read2(self, double_click):
+    parent = self.model.itemFromIndex(self.current.parent())
+    if parent is None:
+      if double_click: return
+      t = self.root.child(self.current.row(), 0).data(Qt.DisplayRole)
+    else:
+      t = parent.child(self.current.row(), 0).data(Qt.DisplayRole)
+    if t == 'attr':
+      chandle = int(parent.child(self.current.row(), 3).data(Qt.DisplayRole))
+      self.ble.read_handle(self.handle, chandle)
+    elif t == 'primary':
+      handles = self.root.child(self.current.row(), 3).data(Qt.DisplayRole)
+      [h1, h2] = handles.split('-')
+      h1 = int(h1)
+      h2 = int(h2)
+      self.ble.read_handles(self.handle, h1, h2)
+
+  def write(self):
     parent = self.model.itemFromIndex(self.current.parent())
     if parent is None: return
     t = parent.child(self.current.row(), 0).data(Qt.DisplayRole)
-    if t == 'char':
+    if t == 'attr':
       chandle = int(parent.child(self.current.row(), 3).data(Qt.DisplayRole))
-      self.ble.read_handle(self.handle, chandle)
-
-  """
-  def double_click(self):
-    if self.current is None: return
-    current = self.current
-    print current, current.parent()
-    while current.parent() != QtCore.QModelIndex():
-      current = current.parent()
-      print current, current.parent()
-    for i in range(self.root.rowCount()):
-      child = self.root.child(i, 0).index()
-      print "child: ", child, current
-      self.view.setExpanded(child, child == current)
-  """
+      print "write to ", chandle
 
   def primary(self):
     self.type = 'primary'
@@ -120,15 +130,14 @@ class Device:
       y.setEditable(False)
       return y
     uuids = ''.join(["%02X" % c for c in uuid])
-    name = ''
-    for (i, n) in self.ble.uuid.attr.values():
-      if i == uuid:
-        name = n
-        break
+    try:
+      name = self.ble.uuid.name_by_uuid(uuid)
+    except:
+      name = ''
     svalue = s('')
     self.chandle_to_value_item[char] = svalue
     self.chandle_to_uuid[char] = uuid
-    self.model.item(self.scan_pos).appendRow([s("char"), s(uuids), s(name), s(str(char)), svalue])
+    self.model.item(self.scan_pos).appendRow([s("attr"), s(uuids), s(name), s(str(char)), svalue])
     #self.view.expandAll()
 
   def attr_value(self, chandle, t, value):
@@ -284,6 +293,7 @@ class MainWin(QtGui.QMainWindow):
       self.handle_to_mac[handle] = mac
       self.qtab.setCurrentIndex(idx)
       self.running = self.PROC_PRIMARY
+      QtGui.QApplication.setOverrideCursor(Qt.WaitCursor)
       device.primary()
       self.status("service discovery running")
       self.ble.primary_service_discovery(handle)
@@ -317,6 +327,7 @@ class MainWin(QtGui.QMainWindow):
       device.scan()
     elif self.running == self.PROC_ATTR:
       if not device.continue_scan():
+        QtGui.QApplication.restoreOverrideCursor()
         self.running = self.PROC_IDLE
         self.status("Idle.")
 

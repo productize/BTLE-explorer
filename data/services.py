@@ -1,4 +1,4 @@
-from import printers import print_uuid, print_string
+from printers import print_uuid, print_string, print_char
 
 service = dict(
 
@@ -32,10 +32,10 @@ attr = dict(
   primary   = ([0x28, 0x00], "Primary", print_uuid),
   secundary = ([0x28, 0x01], "Secundary", print_uuid),
   include   = ([0x28, 0x02], "Include", print_uuid),
-  char      = ([0x28, 0x03], "Characteristic"),
+  char      = ([0x28, 0x03], "Characteristic", print_char),
 
   chr_e_pro = ([0x29, 0x00], "Characteristic Extented Properties"),
-  chr_u_dsc = ([0x29, 0x01], "Characteristic User Description"),
+  chr_u_dsc = ([0x29, 0x01], "Characteristic User Description", print_string),
   chr_c_cnf = ([0x29, 0x02], "Client Characteristic Configuration"),
   chr_s_cnf = ([0x29, 0x03], "Server Characteristic Configuration"),
   chr_p_for = ([0x29, 0x04], "Characteristic Presentation Format"),
@@ -49,6 +49,7 @@ attr = dict(
   per_pri_f = ([0x2A, 0x02], "Peripheral Privacy Flag"),
   reconnect = ([0x2A, 0x03], "Reconnection Address"),
   per_pref_ = ([0x2A, 0x04], "Peripheral Preferred Connection Parameters"),
+  service_c = ([0x2A, 0x05], "Service Changed"),
 )
 
 class Vendor:

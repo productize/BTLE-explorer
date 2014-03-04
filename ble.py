@@ -33,6 +33,7 @@ class BLE(QtCore.QObject):
   service_result = QtCore.Signal(int, list, int, int)
   procedure_completed = QtCore.Signal(int)
   info_found = QtCore.Signal(int, int, list)
+  attr_value = QtCore.Signal(int, int, int, list)
 
   CONNECTED = 0
 
@@ -65,7 +66,10 @@ class BLE(QtCore.QObject):
       ser.flushOutput()
       ble.send_command(ser, ble.ble_cmd_system_address_get())
       time.sleep(0.1)
-      ble.check_activity(ser, 1)
+      try:
+        ble.check_activity(ser, 1)
+      except:
+        pass
       if self.auto_detected:
         self.port = port
         self.ser = ser
@@ -120,6 +124,7 @@ class BLE(QtCore.QObject):
     print "local device:", self.address
     self.ble.ble_evt_attclient_procedure_completed += self.handle_attclient_procedure_completed
     self.ble.ble_evt_attclient_find_information_found += self.handle_attclient_information_found
+    self.ble.ble_evt_attclient_attribute_value += self.handle_attclient_attribute_value
 
   def send_command(self, cmd):
     return self.ble.send_command(self.ser, cmd)
@@ -229,6 +234,16 @@ class BLE(QtCore.QObject):
         dl.append("unknown_field:0x%x" % field_type)
       pos += field_len + 1
     return (name, ' '.join(dl))
+
+  def read_handle(self, handle, chandle):
+    self.send_command(self.ble.ble_cmd_attclient_read_by_handle(handle, chandle))
+
+  def handle_attclient_attribute_value(self, sender, args):
+    chandle = args['atthandle']
+    handle = args['connection']
+    t = args['type']
+    value = args['value']
+    self.attr_value.emit(handle, chandle, t, value)
 
 # https://www.bluetooth.org/en-us/specification/assigned-numbers/generic-access-profile
 GAP_AD_TYPE_FLAGS = 0x01

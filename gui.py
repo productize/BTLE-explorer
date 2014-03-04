@@ -36,13 +36,19 @@ class Device:
     self.view.setSelectionModel(self.selection_model)
     self.selection_model.currentRowChanged.connect(self.row_changed)
     self.current = None
+    self.chandle_to_value_item = {}
+    self.chandle_to_uuid = {}
 
   def row_changed(self, current, previous):
     self.current = current
 
   def read(self):
     parent = self.model.itemFromIndex(self.current.parent())
-    print parent.child(self.current.row(), 3).data(Qt.DisplayRole)
+    if parent is None: return
+    t = parent.child(self.current.row(), 0).data(Qt.DisplayRole)
+    if t == 'char':
+      chandle = int(parent.child(self.current.row(), 3).data(Qt.DisplayRole))
+      self.ble.read_handle(self.handle, chandle)
 
   """
   def double_click(self):
@@ -119,8 +125,17 @@ class Device:
       if i == uuid:
         name = n
         break
-    self.model.item(self.scan_pos).appendRow([s("char"), s(uuids), s(name), s(str(char)), s('')])
+    svalue = s('')
+    self.chandle_to_value_item[char] = svalue
+    self.chandle_to_uuid[char] = uuid
+    self.model.item(self.scan_pos).appendRow([s("char"), s(uuids), s(name), s(str(char)), svalue])
     #self.view.expandAll()
+
+  def attr_value(self, chandle, t, value):
+    print chandle, t, value
+    uuid = self.chandle_to_uuid[chandle]
+    s = self.ble.uuid.value_to_string_by_uuid(uuid, value)
+    self.chandle_to_value_item[chandle].setData(s, Qt.DisplayRole)
 
 class MainWin(QtGui.QMainWindow):
 
@@ -221,6 +236,7 @@ class MainWin(QtGui.QMainWindow):
     self.ble.service_result.connect(self.service_result)
     self.ble.procedure_completed.connect(self.procedure_completed)
     self.ble.info_found.connect(self.info_found)
+    self.ble.attr_value.connect(self.attr_value)
     self.activity_thread.start()
     self.status("Collecting...")
 
@@ -304,6 +320,12 @@ class MainWin(QtGui.QMainWindow):
         self.running = self.PROC_IDLE
         self.status("Idle.")
 
+  def attr_value(self, handle, chandle, t, value):
+    try:
+      device = self.handle_to_device[handle]
+      device.attr_value(chandle, t, value)
+    except KeyError:
+      print "ignoring message for unknown handle", handle
 
 def main():
   QtCore.QCoreApplication.setOrganizationName("productize")

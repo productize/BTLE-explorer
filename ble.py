@@ -46,6 +46,7 @@ class BLE(QtCore.QObject):
     self.packet_mode = packet_mode
     self.address = None
     self.uuid = data.UUID()
+    self.handles_to_read = []
 
   def address_response(self, sender, args):
     self.address = ':'.join(['%02X' % b for b in args['address'][::-1]])
@@ -88,7 +89,7 @@ class BLE(QtCore.QObject):
       self.ble.packet_mode = self.packet_mode
       self.ble.ble_rsp_system_address_get += self.address_response
     ble = self.ble
-    ble.on_timeout += self.timeout
+    ble.on_timeout += self.on_timeout
     ble.ble_evt_gap_scan_response += self.handle_scan_response
     self.ser = serial.Serial(port=self.port, baudrate=self.baud_rate, timeout=1)
     self.ser.flushInput()
@@ -129,7 +130,7 @@ class BLE(QtCore.QObject):
   def send_command(self, cmd):
     return self.ble.send_command(self.ser, cmd)
 
-  def timeout(self, sender, args):
+  def on_timeout(self, sender, args):
     # might want to try the following lines to reset, though it probably
     # wouldn't work at this point if it's already timed out:
     #ble.send_command(ser, ble.ble_cmd_system_reset(0))
@@ -239,8 +240,8 @@ class BLE(QtCore.QObject):
     self.send_command(self.ble.ble_cmd_attclient_read_by_handle(handle, chandle))
 
   def read_handles(self, handle, h1, h2):
-    for x in range(h1, h2+1):
-      self.send_command(self.ble.ble_cmd_attclient_read_by_handle(handle, x))
+    self.handles_to_read = range(h1, h2+1)
+    self.send_command(self.ble.ble_cmd_attclient_read_by_handle(handle, h1))
 
   def handle_attclient_attribute_value(self, sender, args):
     chandle = args['atthandle']
@@ -248,4 +249,9 @@ class BLE(QtCore.QObject):
     t = args['type']
     value = args['value']
     self.attr_value.emit(handle, chandle, t, value)
-    self.ble.check_activity(self.ser, 1)
+    if self.handles_to_read == []: return
+    if chandle in self.handles_to_read:
+      self.handles_to_read.remove(chandle)
+    if self.handles_to_read == []: return
+    self.send_command(self.ble.ble_cmd_attclient_read_by_handle(handle, self.handles_to_read[0]))
+    

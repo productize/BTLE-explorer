@@ -343,6 +343,7 @@ def main():
   QtCore.QCoreApplication.setOrganizationDomain("productize.be")
   QtCore.QCoreApplication.setApplicationName("BTLE tool")
   app = QtGui.QApplication(["BTLE tool"])
+  app.setWindowIcon(QtGui.QIcon('productize_icon.png'))
   widget = MainWin()
   widget.show()
   return app.exec_()

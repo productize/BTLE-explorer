@@ -254,4 +254,9 @@ class BLE(QtCore.QObject):
       self.handles_to_read.remove(chandle)
     if self.handles_to_read == []: return
     self.send_command(self.ble.ble_cmd_attclient_read_by_handle(handle, self.handles_to_read[0]))
+
+  def write_handle(self, handle, chandle, value):
+    self.send_command(self.ble.ble_cmd_attclient_write_command(handle, chandle, value))
+    time.sleep(0.1)
+    self.send_command(self.ble.ble_cmd_attclient_read_by_handle(handle, chandle))
     

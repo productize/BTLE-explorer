@@ -2,13 +2,34 @@
 #
 # (c) 2014 Joost Yervante Damad <joost@productize.be>
 
-import sys, time, datetime
+import sys, time, datetime, ast
 
 from PySide import QtGui, QtCore
 from PySide.QtCore import Qt
 
 import ble
 from ble import BLE
+
+class WriteDialog(QtGui.QDialog):
+
+  def __init__(self, parent, chandle, value=''):
+    super(WriteDialog, self).__init__(parent)
+    self.chandle = chandle
+    self.setWindowTitle("Write %d" % (chandle))
+    self.resize(640,160) # TODO, there must be a better way to do this
+    vbox = QtGui.QVBoxLayout()
+    fl = QtGui.QFormLayout()
+    self.value_edit = QtGui.QLineEdit()
+    self.value_edit.setText(str(value))
+    fl.addRow("Value:", self.value_edit)
+    vbox.addLayout(fl)
+    buttons = QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel
+    self.button_box = QtGui.QDialogButtonBox(buttons, QtCore.Qt.Horizontal)
+    self.button_box.accepted.connect(self.accept)
+    self.button_box.rejected.connect(self.reject)
+    #self.button_box.button(QtGui.QDialogButtonBox.Ok).setDisabled(True)
+    vbox.addWidget(self.button_box)
+    self.setLayout(vbox)
 
 class Device:
 
@@ -73,6 +94,14 @@ class Device:
     if t == 'attr':
       chandle = int(parent.child(self.current.row(), 3).data(Qt.DisplayRole))
       print "write to ", chandle
+      try:
+        value = self.chandle_to_value_item[chandle].data(Qt.DisplayRole)
+      except:
+        value = ''
+      dialog = WriteDialog(self.view, chandle, value)
+      if dialog.exec_() != QtGui.QDialog.Accepted: return
+      value = ast.literal_eval(dialog.value_edit.text())
+      self.ble.write_handle(self.handle, chandle, value)
 
   def primary(self):
     self.type = 'primary'

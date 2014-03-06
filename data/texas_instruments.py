@@ -1,3 +1,5 @@
+# (c) 2014 Productize <joost@productize.be>
+
 def ti_print_ir_temp(data):
   ambient = (data[2] + 256*data[3])/128.0
   # TODO target temp

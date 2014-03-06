@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# (c) 2014 Joost Yervante Damad <joost@productize.be>
+# (c) 2014 Productize <joost@productize.be>
 
 import sys, time, datetime, ast
 

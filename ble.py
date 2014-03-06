@@ -1,3 +1,5 @@
+# (c) 2014 Productize <joost@productize.be>
+
 import serial, time
 
 import bglib

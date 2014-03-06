@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-# loosely based on bglib_test_scanner.py released under MIT license by Jeff Rowberg, who also works for BlueGiga
+# was at some point loosely based on bglib_test_scanner.py released under MIT license by Jeff Rowberg, who also works for BlueGiga
 
-# (c) 2014 Joost Yervante Damad <joost@productize.be>
+# (c) 2014 Productize <joost@productize.be>
 
 import sys, time, datetime
 

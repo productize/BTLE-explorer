@@ -1,3 +1,5 @@
+# (c) 2014 Productize <joost@productize.be>
+
 import services, productize, texas_instruments
 from printers import print_default, print_uuid
 

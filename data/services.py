@@ -1,3 +1,5 @@
+# (c) 2014 Productize <joost@productize.be>
+
 from printers import print_uuid, print_string, print_char
 
 service = dict(

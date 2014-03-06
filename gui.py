@@ -196,7 +196,7 @@ class MainWin(QtGui.QMainWindow):
     self.qtab.setCurrentIndex(0)
     self.ble = ble.BLE(115200)
     self.ble.start()
-    self.setWindowTitle("BTLE tool using device "+self.ble.address)
+    self.setWindowTitle("BTLE-explorer using device "+self.ble.address)
     self.handle_to_mac = {}
     self.handle_to_device = {}
     self.running = self.PROC_IDLE
@@ -222,7 +222,7 @@ class MainWin(QtGui.QMainWindow):
 
   def about(self):
     a = """
-<p align="center"><b>BTLE tool</b></p>
+<p align="center"><b>BTLE-explorer</b></p>
 <p align="center">(c) 2014 <i>productize</i> &lt;joost@productize.be&gt;</p>
 """
     QtGui.QMessageBox.about(self, "about BTLE tool", a)
@@ -369,8 +369,8 @@ class MainWin(QtGui.QMainWindow):
 def main():
   QtCore.QCoreApplication.setOrganizationName("productize")
   QtCore.QCoreApplication.setOrganizationDomain("productize.be")
-  QtCore.QCoreApplication.setApplicationName("BTLE tool")
-  app = QtGui.QApplication(["BTLE tool"])
+  QtCore.QCoreApplication.setApplicationName("BTLE-explorer")
+  app = QtGui.QApplication(["BTLE-explorer"])
   app.setWindowIcon(QtGui.QIcon('productize_icon.png'))
   widget = MainWin()
   widget.show()

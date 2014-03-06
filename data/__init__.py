@@ -31,3 +31,6 @@ class UUID:
 
   def name_by_uuid(self, uuid):
     return self.attr[print_uuid(uuid)].name
+
+  def editor_by_uuid(self, uuid):
+    return self.attr[print_uuid(uuid)].editor()

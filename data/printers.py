@@ -2,6 +2,9 @@
 
 import ast
 
+from PySide import QtGui, QtCore
+from PySide.QtCore import Qt
+
 def print_uuid(val):
   return ''.join(["%02X" % x for x in reversed(val)])
 
@@ -11,6 +14,9 @@ class Default:
 
   def scanv(self, s):
     return ast.literal_eval(s)
+
+  def editor(self):
+    return None
 
 class Uuid:
 
@@ -40,6 +46,18 @@ class Char(Default):
 
 class Bool(Default):
 
+  class BoolEditor(QtGui.QCheckBox):
+    
+    def __init__(self, value):
+      super(Bool.BoolEditor, self).__init__("Enabled")
+      if str(value) == 'True':
+        self.setCheckState(Qt.Checked)
+      else:
+        self.setCheckState(Qt.Unchecked)
+
+    def value(self):
+      return str(self.isChecked())
+
   def printv(self, val):
     return str(val[0]==1)
 
@@ -47,3 +65,6 @@ class Bool(Default):
     if s == "True":
       return [1]
     return [0]
+
+  def editor(self):
+    return Bool.BoolEditor

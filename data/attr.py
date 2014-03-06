@@ -15,3 +15,6 @@ class Attr:
 
   def string_to_value(self, s):
     return self.printer.scanv(s)
+
+  def editor(self):
+    return self.printer.editor()

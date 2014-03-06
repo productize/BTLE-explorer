@@ -12,15 +12,19 @@ from ble import BLE
 
 class WriteDialog(QtGui.QDialog):
 
-  def __init__(self, parent, chandle, value=''):
+  def __init__(self, parent, chandle, name, value, editor):
     super(WriteDialog, self).__init__(parent)
     self.chandle = chandle
-    self.setWindowTitle("Write %d" % (chandle))
+    self.setWindowTitle("Write '%s'" % (name))
     self.resize(640,160) # TODO, there must be a better way to do this
     vbox = QtGui.QVBoxLayout()
     fl = QtGui.QFormLayout()
-    self.value_edit = QtGui.QLineEdit()
-    self.value_edit.setText(str(value))
+    self.editor = editor
+    if editor is None:
+      self.value_edit = QtGui.QLineEdit()
+      self.value_edit.setText(str(value))
+    else:
+      self.value_edit = editor(value)
     fl.addRow("Value:", self.value_edit)
     vbox.addLayout(fl)
     buttons = QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel
@@ -31,6 +35,12 @@ class WriteDialog(QtGui.QDialog):
     vbox.addWidget(self.button_box)
     self.setLayout(vbox)
 
+  def get_result(self):
+    if self.editor is None:
+      return self.value_edit.text()
+    else:
+      return self.value_edit.value()
+
 class Device:
 
   def __init__(self, ble, handle, mac):
@@ -38,6 +48,7 @@ class Device:
     self.handle = handle
     self.mac = mac
     self.view = QtGui.QTreeView()
+    self.view.mac = mac
     self.view.setExpandsOnDoubleClick(True)
     self.view.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
     def _add(text, slot = None):
@@ -93,15 +104,17 @@ class Device:
     t = parent.child(self.current.row(), 0).data(Qt.DisplayRole)
     if t == 'attr':
       chandle = int(parent.child(self.current.row(), 3).data(Qt.DisplayRole))
+      name = parent.child(self.current.row(), 2).data(Qt.DisplayRole)
+      uuid = self.chandle_to_uuid[chandle]
+      editor = self.ble.uuid.editor_by_uuid(uuid)
       print "write to ", chandle
       try:
         value = self.chandle_to_value_item[chandle].data(Qt.DisplayRole)
       except:
         value = ''
-      dialog = WriteDialog(self.view, chandle, value)
+      dialog = WriteDialog(self.view, chandle, name, value, editor)
       if dialog.exec_() != QtGui.QDialog.Accepted: return
-      valstr = dialog.value_edit.text()
-      uuid = self.chandle_to_uuid[chandle]
+      valstr = dialog.get_result()
       value = self.ble.uuid.string_to_value_by_uuid(uuid, valstr)
       self.ble.write_handle(self.handle, chandle, value)
 

@@ -1,8 +1,7 @@
 # (c) 2014 Productize <joost@productize.be>
 
 import bluetooth, productize, texas_instruments
-
-from printers import print_default, print_uuid
+from printers import print_uuid
 
 class UUID:
 
@@ -26,6 +25,9 @@ class UUID:
 
   def value_to_string_by_uuid(self, uuid, value):
     return self.attr[print_uuid(uuid)].value_to_string(value)
+
+  def string_to_value_by_uuid(self, uuid, s):
+    return self.attr[print_uuid(uuid)].string_to_value(s)
 
   def name_by_uuid(self, uuid):
     return self.attr[print_uuid(uuid)].name

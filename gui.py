@@ -2,7 +2,7 @@
 #
 # (c) 2014 Productize <joost@productize.be>
 
-import sys, time, datetime, ast
+import sys, time, datetime
 
 from PySide import QtGui, QtCore
 from PySide.QtCore import Qt
@@ -100,7 +100,9 @@ class Device:
         value = ''
       dialog = WriteDialog(self.view, chandle, value)
       if dialog.exec_() != QtGui.QDialog.Accepted: return
-      value = ast.literal_eval(dialog.value_edit.text())
+      valstr = dialog.value_edit.text()
+      uuid = self.chandle_to_uuid[chandle]
+      value = self.ble.uuid.string_to_value_by_uuid(uuid, valstr)
       self.ble.write_handle(self.handle, chandle, value)
 
   def primary(self):

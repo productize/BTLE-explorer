@@ -1,6 +1,6 @@
 # (c) 2014 Productize <joost@productize.be>
 
-from printers import print_uuid, print_string, print_char
+import printers
 from attr import Attr
 
 attrs= [
@@ -30,13 +30,13 @@ attrs= [
   Attr([0x18, 0x19], "Location and Navigation"),
 
   # declarations
-  Attr([0x28, 0x00], "Primary", print_uuid),
-  Attr([0x28, 0x01], "Secundary", print_uuid),
-  Attr([0x28, 0x02], "Include", print_uuid),
-  Attr([0x28, 0x03], "Characteristic", print_char),
+  Attr([0x28, 0x00], "Primary", printers.Uuid),
+  Attr([0x28, 0x01], "Secundary", printers.Uuid),
+  Attr([0x28, 0x02], "Include", printers.Uuid),
+  Attr([0x28, 0x03], "Characteristic", printers.Char),
 
   Attr([0x29, 0x00], "Characteristic Extented Properties"),
-  Attr([0x29, 0x01], "Characteristic User Description", print_string),
+  Attr([0x29, 0x01], "Characteristic User Description", printers.String),
   Attr([0x29, 0x02], "Client Characteristic Configuration"),
   Attr([0x29, 0x03], "Server Characteristic Configuration"),
   Attr([0x29, 0x04], "Characteristic Presentation Format"),
@@ -46,7 +46,7 @@ attrs= [
   Attr([0x29, 0x08], "Report Reference"),
 
   # characteristics
-  Attr([0x2A, 0x00], "Device Name", print_string),
+  Attr([0x2A, 0x00], "Device Name", printers.String),
   Attr([0x2A, 0x01], "Appearance"),
   Attr([0x2A, 0x02], "Peripheral Privacy Flag"),
   Attr([0x2A, 0x03], "Reconnection Address"),

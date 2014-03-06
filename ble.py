@@ -193,7 +193,7 @@ class BLE(QtCore.QObject):
 
   def primary_service_discovery(self, handle):
     # print "service discovery for %d  ..." % handle
-    self.send_command(self.ble.ble_cmd_attclient_read_by_group_type(handle, 0x0001, 0xFFFF, list(reversed(self.uuid.attr['primary'][0]))))
+    self.send_command(self.ble.ble_cmd_attclient_read_by_group_type(handle, 0x0001, 0xFFFF, list(reversed(self.uuid.attr_by_name['Primary'].uuid))))
 
   def find_information(self, handle, start, end):
     self.send_command(self.ble.ble_cmd_attclient_find_information(handle, start, end))

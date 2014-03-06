@@ -1,8 +1,8 @@
 # (c) 2014 Productize <joost@productize.be>
 
-service = dict()
+from attr import Attr
 
-attr = dict()
+attrs = []
 
 class Vendor:
 

@@ -111,11 +111,10 @@ class Device:
       y = QtGui.QStandardItem(x)
       y.setEditable(False)
       return y
-    service = ''
-    for (i, n) in self.ble.uuid.service.values():
-      if i == uuid:
-        service = n
-        break
+    try:
+      service = self.ble.uuid.name_by_uuid(uuid)
+    except:
+      service = ''
     uuids = ''.join(["%02X" % c for c in uuid])
     #print uuids
     p = s(self.type)

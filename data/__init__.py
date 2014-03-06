@@ -1,25 +1,21 @@
 # (c) 2014 Productize <joost@productize.be>
 
 import services, productize, texas_instruments
+
 from printers import print_default, print_uuid
 
 class UUID:
 
   def __init__(self):
-    self.service = {}
     self.attr = {}
+    self.attr_by_name = {}
     self.vendor = []
     sources = [services, productize, texas_instruments]
     for source in sources:
-     self.service.update(source.service)
-     self.attr.update(source.attr)
+     for attr in source.attrs:
+       self.attr[attr.suuid] = attr
+       self.attr_by_name[attr.name] = attr
      self.vendor.append(source.Vendor())
-    self.attr_by_uuid = {}
-    for v in self.attr.values():
-      if len(v) == 2:
-        self.attr_by_uuid[print_uuid(v[0])] = (v[1], print_default)
-      else:
-        self.attr_by_uuid[print_uuid(v[0])] = (v[1], v[2])
 
   def vendor_to_string(self, data):
     vendor_id = data[0] + 256*data[1]
@@ -29,7 +25,7 @@ class UUID:
     return "vendor:%04X" % vendor_id
 
   def value_to_string_by_uuid(self, uuid, value):
-    return self.attr_by_uuid[print_uuid(uuid)][1](value)
+    return self.attr[print_uuid(uuid)].value_to_string(value)
 
   def name_by_uuid(self, uuid):
-    return self.attr_by_uuid[print_uuid(uuid)][0]
+    return self.attr[print_uuid(uuid)].name

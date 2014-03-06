@@ -37,7 +37,7 @@ attrs= [
 
   Attr([0x29, 0x00], "Characteristic Extented Properties"),
   Attr([0x29, 0x01], "Characteristic User Description", printers.String),
-  Attr([0x29, 0x02], "Client Characteristic Configuration"),
+  Attr([0x29, 0x02], "Client Characteristic Configuration", printers.ClientCharConf),
   Attr([0x29, 0x03], "Server Characteristic Configuration"),
   Attr([0x29, 0x04], "Characteristic Presentation Format"),
   Attr([0x29, 0x05], "Characteristic Aggregate Format"),

@@ -46,10 +46,10 @@ class Char(Default):
 
 class Bool(Default):
 
-  class BoolEditor(QtGui.QCheckBox):
+  class Editor(QtGui.QCheckBox):
     
     def __init__(self, value):
-      super(Bool.BoolEditor, self).__init__("Enabled")
+      super(Bool.Editor, self).__init__("Enabled")
       if str(value) == 'True':
         self.setCheckState(Qt.Checked)
       else:
@@ -67,4 +67,53 @@ class Bool(Default):
     return [0]
 
   def editor(self):
-    return Bool.BoolEditor
+    return Bool.Editor
+
+class ClientCharConf(Default):
+
+  n = "Notify"
+  i = "Indicate"
+
+  class Editor(QtGui.QWidget):
+
+    def __init__(self, c, value):    
+      super(ClientCharConf.Editor, self).__init__()
+      self.n = c.n
+      self.i = c.i
+      vbox = QtGui.QVBoxLayout()
+      prop = c.scanv(value)[0]
+      notify = prop & 0x1 > 0
+      indicate = prop & 0x2 > 0
+      self.notify_edit = QtGui.QCheckBox(self.n)
+      self.indicate_edit = QtGui.QCheckBox(self.i)
+      self.notify_edit.setCheckState(Qt.Unchecked)
+      self.indicate_edit.setCheckState(Qt.Unchecked)
+      if notify:
+        self.notify_edit.setCheckState(Qt.Checked)
+      if indicate:
+        self.indicate_edit.setCheckState(Qt.Checked)
+      vbox.addWidget(self.notify_edit)
+      vbox.addWidget(self.indicate_edit)
+      self.setLayout(vbox)
+
+    def value(self):
+      props = []
+      if self.notify_edit.isChecked(): props += [self.n]
+      if self.indicate_edit.isChecked(): props += [self.i]
+      return '|'.join(props)
+
+  def printv(self, val):
+    prop = val[0]
+    props = []
+    if prop & 0x1 > 0: props += [self.n]
+    if prop & 0x2 > 0: props += [self.i]
+    return '|'.join(props)
+
+  def scanv(self, s):
+    v = 0
+    if self.n in s: v += 1
+    if self.i in s: v += 2
+    return [v, 0]
+
+  def editor(self):
+    return (lambda v: ClientCharConf.Editor(self, v))

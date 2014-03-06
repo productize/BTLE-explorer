@@ -56,7 +56,7 @@ class BLE(QtCore.QObject):
 
   def auto_detect_serial(self):
     import glob
-    glist = glob.glob('/dev/ttyACM*') + glob.glob('/dev/ttyUSB*')
+    glist = glob.glob('/dev/ttyACM*') + glob.glob('/dev/ttyUSB*') + glob.glob('/dev/cu.usbmodem*')
     self.auto_detected = False
     for port in glist:
       print "trying", port

@@ -1,2 +1,2 @@
 all:
-	./ble112.py
+	./btle-explorer.py

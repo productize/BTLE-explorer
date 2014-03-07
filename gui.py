@@ -252,7 +252,7 @@ class MainWin(QtGui.QMainWindow):
   def about(self):
     a = """
 <p align="center"><b>BTLE-explorer</b></p>
-<p align="center">(c) 2014 <i>productize</i> &lt;joost@productize.be&gt;</p>
+<p align="center">(c) 2014 <i><a href="http://www.productize.be/">productize</a></i> &lt;joost@productize.be&gt;</p>
 """
     QtGui.QMessageBox.about(self, "about BTLE tool", a)
 

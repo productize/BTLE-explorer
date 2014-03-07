@@ -71,6 +71,8 @@ class Device:
     self.current = None
     self.chandle_to_value_item = {}
     self.chandle_to_uuid = {}
+    self.chandle_to_timer = {}
+    self.chandle_stored_background = {}
 
   def row_changed(self, current, previous):
     self.current = current
@@ -178,16 +180,28 @@ class Device:
     except:
       name = ''
     svalue = s('')
+    self.chandle_stored_background[char] = svalue.background()
     self.chandle_to_value_item[char] = svalue
     self.chandle_to_uuid[char] = uuid
+    self.chandle_to_timer[char] = QtCore.QTimer()
+    self.chandle_to_timer[char].setSingleShot(True)
+    self.chandle_to_timer[char].timeout.connect(lambda: self.value_is_older(char))
     self.model.item(self.scan_pos).appendRow([s("attr"), s(uuids), s(name), s(str(char)), svalue])
     #self.view.expandAll()
 
+  def value_is_older(self, chandle):
+    svalue = self.chandle_to_value_item[chandle]
+    svalue.setBackground(self.chandle_stored_background[chandle])
+
   def attr_value(self, chandle, t, value):
-    print chandle, t, value
     uuid = self.chandle_to_uuid[chandle]
     s = self.ble.uuid.value_to_string_by_uuid(uuid, value)
-    self.chandle_to_value_item[chandle].setData(s, Qt.DisplayRole)
+    # TODO temporarely change background to green, and start timer
+    # to change it back
+    svalue = self.chandle_to_value_item[chandle]
+    svalue.setData(s, Qt.DisplayRole)
+    svalue.setBackground(QtGui.QBrush(Qt.green))
+    self.chandle_to_timer[chandle].start(500.0)
 
 class MainWin(QtGui.QMainWindow):
 

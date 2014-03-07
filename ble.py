@@ -246,7 +246,7 @@ class BLE(QtCore.QObject):
     self.send_command(self.ble.ble_cmd_attclient_read_by_handle(handle, h1))
 
   def handle_attclient_attribute_value(self, sender, args):
-    print args
+    #print args
     chandle = args['atthandle']
     handle = args['connection']
     t = args['type']

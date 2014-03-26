@@ -13,6 +13,8 @@ from data import UUID
 from ble import BLE, ActivityThread
 
 def print_scan_response(ble, args):
+  (name, data) = ble.data_to_string(args['data'])
+  if not 'Hum' in name: return
   print "gap_scan_response",
   t = datetime.datetime.now()
   disp_list = []
@@ -22,7 +24,7 @@ def print_scan_response(ble, args):
   disp_list.append("from: %s" % ''.join(['%02X' % b for b in args["sender"][::-1]]))
   disp_list.append("adt: %d" % args["address_type"])
   disp_list.append("bond: %d" % args["bond"])
-  disp_list.append("name: %s data: %s" % ble.data_to_string(args['data']))
+  disp_list.append("name: %s data: %s" % (name, data))
   print ' '.join(disp_list)
 
 def run():

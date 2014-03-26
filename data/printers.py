@@ -117,3 +117,25 @@ class ClientCharConf(Default):
 
   def editor(self):
     return (lambda v: ClientCharConf.Editor(self, v))
+
+class CSCFeature(Default):
+
+  def printv(self, val):
+    prop = val[0]
+    props = []
+    if prop & 0x1 > 0: props += ["Wheel"]
+    if prop & 0x2 > 0: props += ["Crank"]
+    if prop & 0x4 > 0: props += ["Multiple"]
+    return '|'.join(props)
+
+class CSCMeasurement(Default):
+  def printv(self, val):
+    print val
+    prop = val[0]
+    props = []
+    if prop & 0x1 > 0: props += ["Wheel"]
+    if prop & 0x2 > 0: props += ["Crank"]
+    props = '|'.join(props)
+    revo = val[1] + 256*val[2] + 65536*val[3] + 16777216*val[4]
+    last = (val[5] + 256*val[6])/1024.0
+    return "%s rev:%d last:%02f" % (props, revo, last)

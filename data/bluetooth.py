@@ -52,6 +52,9 @@ attrs= [
   Attr([0x2A, 0x03], "Reconnection Address"),
   Attr([0x2A, 0x04], "Peripheral Preferred Connection Parameters"),
   Attr([0x2A, 0x05], "Service Changed"),
+
+  Attr([0x2A, 0x5B], "CSC Measurement", printers.CSCMeasurement),
+  Attr([0x2A, 0x5C], "CSC Feature", printers.CSCFeature),
 ]
 
 class Vendor:

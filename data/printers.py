@@ -28,6 +28,11 @@ class String:
   def printv(self, val):
     return ''.join(["%c" % x for x in val])
 
+class Int32:
+
+  def printv(self, val):
+    return str(val[0] + 256*val[1] + 256*256*val[2] + 256*256*256*val[3])
+
 class Char(Default):
 
   def printv(self, val):

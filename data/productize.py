@@ -1,8 +1,12 @@
 # (c) 2014 Productize <joost@productize.be>
 
 from attr import Attr
+import printers
 
-attrs = []
+attrs = [
+  Attr("ac842717-f24c-46f7-bf49-5393f0124f8d", "Count Service"),
+  Attr("5b97ab09-9065-478c-9ce8-9c9dcb2c5922", "Count", printers.Int32),
+]
 
 class Vendor:
 

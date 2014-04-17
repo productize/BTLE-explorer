@@ -216,6 +216,7 @@ class MainWin(QtGui.QMainWindow):
     self.add_action(fileMenu, '&Quit', self.close, 'Ctrl+Q')
     deviceMenu = menuBar.addMenu('&Device')
     self.add_action(deviceMenu, '&Connect', self.double_click)
+    self.add_action(deviceMenu, '&Disconnect', self.disconnect)
     helpMenu = menuBar.addMenu('&Help')
     self.add_action(helpMenu, '&About', self.about)
     self.qtab = QtGui.QTabWidget()
@@ -228,6 +229,7 @@ class MainWin(QtGui.QMainWindow):
     self.setWindowTitle("BTLE-explorer using device "+self.ble.address)
     self.handle_to_mac = {}
     self.handle_to_device = {}
+    self.mac_to_handle = {}
     self.running = self.PROC_IDLE
     self.status("Ready.")
     self.run_collection()
@@ -285,6 +287,7 @@ class MainWin(QtGui.QMainWindow):
 
   def make_device_widget(self, handle, mac):
      device = Device(self.ble, handle, mac)
+     self.handle_to_device[handle] = device
      self.handle_to_device[handle] = device
      return device
 
@@ -348,12 +351,21 @@ class MainWin(QtGui.QMainWindow):
       device = self.make_device_widget(handle, mac)
       idx = self.qtab.addTab(device.view, mac)
       self.handle_to_mac[handle] = mac
+      self.mac_to_handle[mac] = handle
       self.qtab.setCurrentIndex(idx)
       self.running = self.PROC_PRIMARY
       QtGui.QApplication.setOverrideCursor(Qt.WaitCursor)
       device.primary()
       self.status("service discovery running")
       self.ble.primary_service_discovery(handle)
+    elif status == BLE.DISCONNECTED:
+      try:
+        mac = self.handle_to_mac[handle]
+        idx = self.tab_exists(mac)
+        if not idx is None:
+          self.qtab.removeTab(idx)
+      except KeyError: # old stale connection
+        pass
 
   def double_click(self):
     idx = self.tab_exists(self.selected_device)
@@ -363,6 +375,14 @@ class MainWin(QtGui.QMainWindow):
         self.ble.connect_direct(self.selected_device_raw)
     else:
       self.qtab.setCurrentIndex(idx)
+
+  def disconnect(self):
+    idx = self.tab_exists(self.selected_device)
+    if not idx is None:
+      if not self.selected_device is None:
+        self.status("disconnecting")
+        self.qtab.setCurrentIndex(idx)
+        self.ble.disconnect(self.mac_to_handle[self.selected_device])
 
   def service_result(self, handle, uuid, start, end):
     device = self.handle_to_device[handle]

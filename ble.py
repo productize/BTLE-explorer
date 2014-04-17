@@ -38,6 +38,7 @@ class BLE(QtCore.QObject):
   attr_value = QtCore.Signal(int, int, int, list)
 
   CONNECTED = 0
+  DISCONNECTED = 1
 
   def __init__(self, baud_rate, packet_mode = False):
     import data
@@ -119,6 +120,7 @@ class BLE(QtCore.QObject):
     self.send_command(ble.ble_cmd_hardware_io_port_write(0, 1, 0))
     # handle connections
     self.ble.ble_evt_connection_status += self.handle_connection_status
+    self.ble.ble_evt_connection_disconnected += self.handle_connection_disconnected
     # handle service info
     self.ble.ble_evt_attclient_group_found += self.handle_attclient_group_found
     # get local address
@@ -157,6 +159,12 @@ class BLE(QtCore.QObject):
       print "Connected to %d %s" % (h, f)
       self.connection_status.emit(h, f, self.CONNECTED)
 
+  def handle_connection_disconnected(self, sender, args):
+    h = args['connection']
+    reason = args['reason']
+    print "Disconnected to %d because %s" % (h, reason)
+    self.connection_status.emit(h, "", self.DISCONNECTED)
+
   def handle_attclient_group_found(self, sender, args):
     #uuid = ''.join(["%02X" % c for c in reversed(args['uuid'])])
     #print "Found attribute group for service: %s start=%d, end=%d" % (uuid, args['start'], args['end'])
@@ -190,6 +198,9 @@ class BLE(QtCore.QObject):
     self.send_command(self.ble.ble_cmd_gap_connect_direct(
       address, addr_type, conn_interval_min, 
       conn_interval_max, timeout, slave_latency))
+
+  def disconnect(self, handle):
+    return self.send_command(self.ble.ble_cmd_connection_disconnect(handle))
 
   def primary_service_discovery(self, handle):
     # print "service discovery for %d  ..." % handle

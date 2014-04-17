@@ -14,7 +14,7 @@ from ble import BLE, ActivityThread
 
 def print_scan_response(ble, args):
   (name, data) = ble.data_to_string(args['data'])
-  if not 'Hum' in name: return
+  #if not 'Hum' in name: return
   print "gap_scan_response",
   t = datetime.datetime.now()
   disp_list = []

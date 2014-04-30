@@ -275,8 +275,8 @@ class MainWin(QtGui.QMainWindow):
     _add('&Connect', self.double_click)
     self.collect_view.doubleClicked.connect(self.double_click)
     self.collect_model = QtGui.QStandardItemModel()
-    self.collect_model.setColumnCount(4)
-    self.collect_model.setHorizontalHeaderLabels(['time','from', 'name', 'data'])
+    self.collect_model.setColumnCount(5)
+    self.collect_model.setHorizontalHeaderLabels(['time','from', 'name', 'data', 'rssi'])
     self.collect_model_root = self.collect_model.invisibleRootItem()
     self.collect_view.setModel(self.collect_model)
     self.selection_model = QtGui.QItemSelectionModel(self.collect_model, self.collect_view)
@@ -322,6 +322,10 @@ class MainWin(QtGui.QMainWindow):
     ftime.setData(ident)
     fsender = s(sender)
     fsender.setData(args["sender"])
+    rssi = str(args['rssi'])
+    # ~ -70 at 1m distance
+    # ~ -80 => 2m
+    # at 2m50 no more signal
     replaced = False
     for x in range(0, self.collect_model.rowCount()):
       if self.collect_model.item(x, 0).data() == ident:
@@ -329,11 +333,12 @@ class MainWin(QtGui.QMainWindow):
         replaced = True
         break # only one identical to remove normally
     if not replaced:
-      self.collect_model.insertRow(0, [ftime, fsender, s(name), s(data)])
+      self.collect_model.insertRow(0, [ftime, fsender, s(name), s(data), s(rssi)])
       self.collect_view.resizeColumnToContents(0)
       self.collect_view.resizeColumnToContents(1)
       self.collect_view.resizeColumnToContents(2)
       self.collect_view.resizeColumnToContents(3)
+      self.collect_view.resizeColumnToContents(4)
 
   def tab_exists(self, mac):
     found = None

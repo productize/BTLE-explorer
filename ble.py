@@ -130,6 +130,7 @@ class BLE(QtCore.QObject):
     self.ble.ble_evt_attclient_procedure_completed += self.handle_attclient_procedure_completed
     self.ble.ble_evt_attclient_find_information_found += self.handle_attclient_information_found
     self.ble.ble_evt_attclient_attribute_value += self.handle_attclient_attribute_value
+    self.ble.ble_evt_attclient_read_multiple_response += self.handle_attclient_read_multiple_response
 
   def send_command(self, cmd):
     return self.ble.send_command(self.ser, cmd)
@@ -257,7 +258,7 @@ class BLE(QtCore.QObject):
     self.send_command(self.ble.ble_cmd_attclient_read_by_handle(handle, h1))
 
   def handle_attclient_attribute_value(self, sender, args):
-    #print args
+    print args
     chandle = args['atthandle']
     handle = args['connection']
     t = args['type']
@@ -268,6 +269,9 @@ class BLE(QtCore.QObject):
       self.handles_to_read.remove(chandle)
     if self.handles_to_read == []: return
     self.send_command(self.ble.ble_cmd_attclient_read_by_handle(handle, self.handles_to_read[0]))
+
+  def handle_attclient_read_multiple_response(self, sender, args):
+     print "read_multiple", args
 
   def write_handle(self, handle, chandle, value):
     self.send_command(self.ble.ble_cmd_attclient_write_command(handle, chandle, value))

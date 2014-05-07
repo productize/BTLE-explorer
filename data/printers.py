@@ -33,6 +33,21 @@ class Int32:
   def printv(self, val):
     return str(val[0] + 256*val[1] + 256*256*val[2] + 256*256*256*val[3])
 
+class Int16:
+
+  def printv(self, val):
+    return str(val[0] + 256*val[1])
+
+class Int8:
+
+  def printv(self, val):
+    return str(val[0])
+
+class BatteryLevel:
+
+  def printv(self, val):
+    return "%s%%" % (str(val[0]))
+
 class Char(Default):
 
   def printv(self, val):

@@ -7,10 +7,20 @@ from PySide import QtCore
 
 # https://www.bluetooth.org/en-us/specification/assigned-numbers/generic-access-profile
 GAP_AD_TYPE_FLAGS = 0x01
+GAP_AD_TYPE_16BIT_UUIDS = 0x03
 GAP_AD_TYPE_LOCALNAME_COMPLETE = 0x09
 GAP_AD_TYPE_TX_POWER = 0x0A
 GAP_AD_TYPE_SLAVE_CON_INTERVAL_RANGE = 0x12
+GAP_AD_TYPE_APPEARANCE = 0x19
 GAP_AD_TYPE_VENDOR = 0xFF
+
+_event_type = ["IND", "DIRECT_IND", "SCAN_IND", "NONCONN_IND", "SCAN_RSP"]
+
+def event_type(n):
+  try:
+    return _event_type[n]
+  except:
+    return "RESERVED"
 
 class ActivityThread(QtCore.QThread):
 
@@ -144,6 +154,7 @@ class BLE(QtCore.QObject):
     self.timeout.emit()
 
   def handle_scan_response(self, sender, args):
+    #print args
     if self.led == False:
       self.send_command(self.ble.ble_cmd_hardware_io_port_write(0, 1, 1))
       self.led = True
@@ -188,14 +199,17 @@ class BLE(QtCore.QObject):
     return self.ble.check_activity(self.ser)
 
   def connect_direct(self, target):
+    (target, addr_type) = target
     f = ':'.join(['%02X' % b for b in target[::-1]])
     print "connecting to", f
     address = target
-    addr_type = 0 # public
+    # addr_type = 0 # public
+    # addr_type = 1 # random
     timeout = 30 # 3 sec
     slave_latency = 0 # disabled
     conn_interval_min = 100/1.25 # in ms
     conn_interval_max = 1000/1.25 # in ms
+    #self.send_command(self.ble.ble_cmd_sm_set_bondable_mode(True))
     self.send_command(self.ble.ble_cmd_gap_connect_direct(
       address, addr_type, conn_interval_min, 
       conn_interval_max, timeout, slave_latency))
@@ -234,6 +248,14 @@ class BLE(QtCore.QObject):
       field_data = data[pos+2:(pos+2+field_len-1)]
       if field_type == GAP_AD_TYPE_FLAGS:
         dl.append("flags:%s" % self.flags_to_string(field_data[0]))
+      elif field_type == GAP_AD_TYPE_16BIT_UUIDS:
+        dl.append("uuids:")
+        num = (field_len-1)/2
+        for i in range(num):
+          uuid = field_data[i*2] + 256*field_data[i*2+1]
+          dl.append("%04x" % uuid)
+          if i < num-1:
+            dl.append(",")
       elif field_type == GAP_AD_TYPE_LOCALNAME_COMPLETE:
         name = ''.join(['%c' % b for b in field_data])
         # dl.append("name:%s" % name)
@@ -243,6 +265,10 @@ class BLE(QtCore.QObject):
         x1 = (field_data[0] + 256*field_data[1])*1.25
         x2 = (field_data[2] + 256*field_data[3])*1.25
         dl.append('slv_con_int_ran:%d-%dms' % (x1, x2))
+      elif field_type == GAP_AD_TYPE_APPEARANCE:
+        num = field_data[0] + 256*field_data[1]
+        # see https://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.gap.appearance.xml
+        dl.append("appearance:%d" % num)
       elif field_type == GAP_AD_TYPE_VENDOR:
         dl.append(self.uuid.vendor_to_string(field_data))
       else:
@@ -258,11 +284,13 @@ class BLE(QtCore.QObject):
     self.send_command(self.ble.ble_cmd_attclient_read_by_handle(handle, h1))
 
   def handle_attclient_attribute_value(self, sender, args):
-    print args
+    print "attribute_value:", args
     chandle = args['atthandle']
     handle = args['connection']
     t = args['type']
     value = args['value']
+    res = ''.join(["%c" % x for x in value if x != 0])
+    print "show string:", value, res
     self.attr_value.emit(handle, chandle, t, value)
     if self.handles_to_read == []: return
     if chandle in self.handles_to_read:

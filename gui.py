@@ -276,7 +276,7 @@ class MainWin(QtGui.QMainWindow):
     self.collect_view.doubleClicked.connect(self.double_click)
     self.collect_model = QtGui.QStandardItemModel()
     self.collect_model.setColumnCount(5)
-    self.collect_model.setHorizontalHeaderLabels(['time','from', 'name', 'data', 'rssi'])
+    self.collect_model.setHorizontalHeaderLabels(['time','from', 'type', 'name', 'data', 'rssi'])
     self.collect_model_root = self.collect_model.invisibleRootItem()
     self.collect_view.setModel(self.collect_model)
     self.selection_model = QtGui.QItemSelectionModel(self.collect_model, self.collect_view)
@@ -316,13 +316,19 @@ class MainWin(QtGui.QMainWindow):
       return y
     time_ = time.strftime("%H:%M:%S %d/%m/%Y", time.localtime())
     ftime = s(time_)
-    sender = ':'.join(['%02X' % b for b in args["sender"][::-1]])
+    address_type = args['address_type']
+    if address_type == 0:
+      ats = 'P|'
+    else:
+      ats = 'R|'
+    sender = ats + (':'.join(['%02X' % b for b in args["sender"][::-1]]))
     name, data = self.ble.data_to_string(args['data'])
     ident = "%s_%s_%s" % (sender, name, data)
     ftime.setData(ident)
     fsender = s(sender)
-    fsender.setData(args["sender"])
+    fsender.setData((args["sender"], args['address_type']))
     rssi = str(args['rssi'])
+    packet_type = ble.event_type(args['packet_type'])
     # ~ -70 at 1m distance
     # ~ -80 => 2m
     # at 2m50 no more signal
@@ -333,12 +339,13 @@ class MainWin(QtGui.QMainWindow):
         replaced = True
         break # only one identical to remove normally
     if not replaced:
-      self.collect_model.insertRow(0, [ftime, fsender, s(name), s(data), s(rssi)])
+      self.collect_model.insertRow(0, [ftime, fsender, s(packet_type), s(name), s(data), s(rssi)])
       self.collect_view.resizeColumnToContents(0)
       self.collect_view.resizeColumnToContents(1)
       self.collect_view.resizeColumnToContents(2)
       self.collect_view.resizeColumnToContents(3)
       self.collect_view.resizeColumnToContents(4)
+      self.collect_view.resizeColumnToContents(5)
 
   def tab_exists(self, mac):
     found = None
@@ -371,6 +378,7 @@ class MainWin(QtGui.QMainWindow):
           self.qtab.removeTab(idx)
       except KeyError: # old stale connection
         pass
+      self.run_collection()
 
   def double_click(self):
     idx = self.tab_exists(self.selected_device)

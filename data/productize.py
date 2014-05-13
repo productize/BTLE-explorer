@@ -24,6 +24,7 @@ attrs = [
   Attr("8c1cc1fd-6062-48aa-93e4-35dc351c3487", "Humidity ADC", HumidityPrinter),
   Attr("4f99a937-c182-4956-92ff-34bc8ec10644", "Temperature ADC", TemperaturePrinter),
   Attr("4707d070-5e5c-4e1f-b026-535071b43190", "Blink", printers.Int8),
+  Attr("157930d3-1746-40d6-b07c-ed92829e7d54", "ID", printers.String),
 ]
 
 class Vendor:

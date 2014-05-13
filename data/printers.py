@@ -26,7 +26,8 @@ class Uuid:
 class String:
 
   def printv(self, val):
-    return ''.join(["%c" % x for x in val])
+    res = ''.join(["%c" % x for x in val if x != 0])
+    return res
 
 class Int32:
 

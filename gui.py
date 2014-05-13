@@ -378,7 +378,7 @@ class MainWin(QtGui.QMainWindow):
           self.qtab.removeTab(idx)
       except KeyError: # old stale connection
         pass
-      self.run_collection()
+      self.ble.resume_collection() # TODO
 
   def double_click(self):
     idx = self.tab_exists(self.selected_device)

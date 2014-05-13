@@ -121,7 +121,7 @@ class BLE(QtCore.QObject):
     self.send_command(ble.ble_cmd_gap_set_scan_parameters(0xC8, 0xC8, 1))
     ble.check_activity(ser, 1)
     # start scanning now
-    self.send_command(ble.ble_cmd_gap_discover(1))
+    self.send_command(ble.ble_cmd_gap_discover(2))
     ble.check_activity(ser, 1)
     # IO port stuff for LED; doesn't work currently
     self.send_command(ble.ble_cmd_hardware_io_port_config_pull(0, 0, 0))

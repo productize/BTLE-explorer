@@ -10,3 +10,5 @@ All files are (c) 2014 Productize <joost@productize.be> available under the GPLv
 Except:
 
 bglib.py: (c) 2013 Jeff Rowberg <jeff@rowberg.net> available under the MIT license
+
+Remark: the code only works with python 2.7.x, not with python 3.x

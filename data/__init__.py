@@ -1,6 +1,6 @@
 # (c) 2014 Productize <joost@productize.be>
 
-import bluetooth, productize, texas_instruments
+import bluetooth, productize, texas_instruments, apple
 from printers import print_uuid
 
 class UUID:
@@ -9,7 +9,7 @@ class UUID:
     self.attr = {}
     self.attr_by_name = {}
     self.vendor = []
-    sources = [bluetooth, productize, texas_instruments]
+    sources = [bluetooth, productize, texas_instruments, apple]
     for source in sources:
      for attr in source.attrs:
        self.attr[attr.suuid] = attr

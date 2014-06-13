@@ -25,7 +25,8 @@ class Vendor:
        return "ibeacon:unknown%s" % (data[0:16])
 
   def to_string(self, data):
-    # first two bytes identify msg as an ibeacon msg
+    # first byte identifies data as an ibeacon message
+    # second byte is length
     if data[0] == 0x02 and data[1] == 0x15:
       return _decode_ibeacon(data[2:])
     else:

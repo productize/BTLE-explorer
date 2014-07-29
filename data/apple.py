@@ -28,7 +28,7 @@ class Vendor:
     # first byte identifies data as an ibeacon message
     # second byte is length
     if data[0] == 0x02 and data[1] == 0x15:
-      return _decode_ibeacon(data[2:])
+      return self._decode_ibeacon(data[2:])
     else:
       return "apple:unknown[%d,%d]" % (data[0], data[1])
     
